@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { api, API_URL } from './apiClient';
 import { Product, ProductRating, ProductStatus } from '../types';
 
@@ -72,14 +73,17 @@ export const rateProduct = async (id: string, value: number, token: string): Pro
 
 // 7. Subir foto del producto (Privado). Devuelve la ruta para el campo "image"
 // Usamos XMLHttpRequest: el fetch de Expo (SDK 57) no acepta archivos { uri, name, type } en FormData
-export const uploadProductImage = (uri: string, token: string, mimeType?: string | null): Promise<string> => {
+export const uploadProductImage = async (uri: string, token: string, mimeType?: string | null): Promise<string> => {
   const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+  const type = mimeType || `image/${extension === 'jpg' ? 'jpeg' : extension}`;
   const formData = new FormData();
-  formData.append('image', {
-    uri,
-    name: `foto.${extension}`,
-    type: mimeType || `image/${extension === 'jpg' ? 'jpeg' : extension}`,
-  } as any);
+  if (Platform.OS === 'web') {
+    // En el navegador la foto llega como blob: la convertimos en archivo
+    const blob = await (await fetch(uri)).blob();
+    formData.append('image', blob, 'foto.jpg');
+  } else {
+    formData.append('image', { uri, name: `foto.${extension}`, type } as any);
+  }
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();

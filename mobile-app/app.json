@@ -12,7 +12,8 @@
       "expo-image-picker",
       {
         "photosPermission": "UniBuyC usa tus fotos para que agregues imágenes a tus productos.",
-        "cameraPermission": "UniBuyC usa la cámara para que tomes fotos de tus productos."
+        "cameraPermission": "UniBuyC usa la cámara para que tomes fotos de tus productos.",
+        "microphonePermission": false
       }
     ]
   ],
@@ -22,14 +23,29 @@
       "projectId": "33cc135b-1ca6-4731-bdea-aeff5c99e05d"
     }
   },
-  "owner": "4ng3l-0g",
+  "owner": "unibuyc",
   "updates": {
     "url": "https://u.expo.dev/33cc135b-1ca6-4731-bdea-aeff5c99e05d"
   },
   "android": {
-    "permissions": [
+    "package": "com.unibuyc.app",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "monochromeImage": "./assets/adaptive-icon-monochrome.png",
+      "backgroundColor": "#10B981"
+    },
+    "blockedPermissions": [
       "android.permission.RECORD_AUDIO"
     ]
   },
-  "ios": {}
+  "ios": {
+    "bundleIdentifier": "com.unibuyc.app"
+  },
+  "web": {
+    "bundler": "metro",
+    "output": "single",
+    "name": "UniBuyC",
+    "favicon": "./assets/favicon.png"
+  },
+  "icon": "./assets/icon.png"
 }

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- interactive-widget: al abrir el teclado el navegador achica la página (sin franja debajo) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>UniBuyC</title>
+    <meta name="description" content="Compra y vende dentro de tu universidad. Para alumnos y profesores de la UAM." />
+
+    <!-- Acceso directo ("Agregar a pantalla de inicio") -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#10B981" />
+    <!-- iPhone / Safari -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="UniBuyC" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      /* Sin el contorno del navegador en los campos de texto: la app marca el enfoque con su propio borde */
+      input,
+      textarea {
+        outline: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>
+      Necesitas activar JavaScript para usar UniBuyC.
+    </noscript>
+    <div id="root"></div>
+  </body>
+</html>

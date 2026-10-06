@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { api } from '../api/apiClient';
+import { Platform } from 'react-native';
+
+// En el celular la sesión va en el almacenamiento seguro; en el navegador, en localStorage
+const storage = {
+  setItemAsync: async (key: string, value: string) =>
+    Platform.OS === 'web' ? localStorage.setItem(key, value) : SecureStore.setItemAsync(key, value),
+  getItemAsync: async (key: string) =>
+    Platform.OS === 'web' ? localStorage.getItem(key) : SecureStore.getItemAsync(key),
+  deleteItemAsync: async (key: string) =>
+    Platform.OS === 'web' ? localStorage.removeItem(key) : SecureStore.deleteItemAsync(key),
+};
 
 interface User {
   id: string;
@@ -25,8 +35,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (token, user) => {
     // 1. Guardar en memoria del celular (persistente)
-    await SecureStore.setItemAsync('token', token);
-    await SecureStore.setItemAsync('user', JSON.stringify(user));
+    await storage.setItemAsync('token', token);
+    await storage.setItemAsync('user', JSON.stringify(user));
     
     // 2. Configurar axios para usar este token en el futuro
     // (Opcional, lo implementaremos si necesitamos rutas protegidas)
@@ -36,15 +46,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync('token');
-    await SecureStore.deleteItemAsync('user');
+    await storage.deleteItemAsync('token');
+    await storage.deleteItemAsync('user');
     set({ token: null, user: null, isLoading: false });
   },
 
   checkSession: async () => {
     try {
-      const token = await SecureStore.getItemAsync('token');
-      const userStr = await SecureStore.getItemAsync('user');
+      const token = await storage.getItemAsync('token');
+      const userStr = await storage.getItemAsync('user');
       
       if (token && userStr) {
         set({ token, user: JSON.parse(userStr), isLoading: false });

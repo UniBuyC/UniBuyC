@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Dimensions, DimensionValue, ViewStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, DimensionValue, ViewStyle, StyleProp } from 'react-native';
+import { appWidth } from '../../utils/layout';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -33,7 +34,7 @@ export function SkeletonBox({ width = '100%', height, radius = 8, style }: BoxPr
   );
 }
 
-const CARD_WIDTH = (Dimensions.get('window').width - 48) / 2;
+const CARD_WIDTH = (appWidth() - 48) / 2;
 
 // Cuadrícula de tarjetas de producto (Inicio)
 export function ProductGridSkeleton({ count = 6 }: { count?: number }) {

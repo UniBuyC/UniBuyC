@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { useAuthStore } from '../store/authStore';
+import BrandLogo from '../components/BrandLogo';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,6 +20,8 @@ import ActionSheetHost from '../components/feedback/ActionSheetHost';
 import { navigationRef } from './navigationRef';
 import { Product } from '../types';
 import { useTheme } from '../theme';
+import { Platform } from 'react-native';
+import HeaderBack from '../components/HeaderBack';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -33,6 +38,25 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { colors, isDark } = useTheme();
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const token = useAuthStore((state) => state.token);
+  const checkSession = useAuthStore((state) => state.checkSession);
+
+  // Al abrir la app revisamos si hay una sesión guardada
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  // Pantalla breve mientras se lee la sesión guardada
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <BrandLogo size={96} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+      </View>
+    );
+  }
 
   // Tema de la navegación (encabezados, fondos entre transiciones) según modo claro/oscuro
   const navTheme = {
@@ -55,12 +79,15 @@ export default function AppNavigator() {
     <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Stack.Navigator
         id="RootStack"
-        initialRouteName="Login"
+        // Con sesión guardada entramos directo a la app
+        initialRouteName={token ? 'MainTabs' : 'Login'}
         // Transición por defecto: deslizar desde la derecha, con gesto para regresar en toda la pantalla
         screenOptions={{
           animation: 'slide_from_right',
           gestureEnabled: true,
           fullScreenGestureEnabled: true,
+          // En web la flecha estándar no carga: usamos una vectorial (en el celular queda la nativa)
+          ...(Platform.OS === 'web' ? { headerLeft: () => <HeaderBack /> } : {}),
         }}
       >
         

@@ -13,7 +13,7 @@ import { JWT_SECRET } from './jwt-secret';
     PassportModule,
     JwtModule.register({
       secret: JWT_SECRET, // Viene de la variable de entorno JWT_SECRET
-      signOptions: { expiresIn: '24h' }, // El token dura 24 horas
+      signOptions: { expiresIn: '30d' }, // La sesión dura 30 días (la app la recuerda al reiniciar)
     }),
   ],
   controllers: [AuthController],

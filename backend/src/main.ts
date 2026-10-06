@@ -8,6 +8,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Permite que la versión web de la app (otro dominio) llame a la API.
+  // La autenticación va en el encabezado Authorization, no en cookies.
+  app.enableCors();
+
   // Registro de peticiones que cambian datos o que fallan (las consultas periódicas no se muestran)
   app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();

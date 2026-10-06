@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Pressable, Image
 } from 'react-native';
@@ -16,6 +16,7 @@ import { STATUS_LABEL } from '../utils/productStatus';
 import PressableScale from '../components/anim/PressableScale';
 import { haptic } from '../utils/haptics';
 import { useTheme, useThemedStyles, ThemeColors } from '../theme';
+import Avatar from '../components/Avatar';
 
 // Mensaje que escribí y todavía no confirma el servidor
 interface PendingMessage {
@@ -42,6 +43,28 @@ export default function ChatScreen({ route, navigation }: any) {
   // Producto del chat y si la conversación quedó cerrada (vendido / eliminado)
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const locked = !!conversation?.lockReason;
+
+  // Encabezado con el avatar y el nombre de la otra persona (al tocarlo abre su perfil)
+  const otherId = conversation
+    ? (conversation.buyerId === user?.id ? conversation.sellerId : conversation.buyerId)
+    : null;
+  useLayoutEffect(() => {
+    if (!otherId) return;
+    const name = route.params.title;
+    navigation.setOptions({
+      headerTitle: () => (
+        <Pressable
+          style={styles.headerTitle}
+          onPress={() => navigation.navigate('SellerProfile', { seller: { id: otherId, fullName: name } })}
+          accessibilityRole="button"
+          accessibilityLabel={`Ver perfil de ${name}`}
+        >
+          <Avatar seed={otherId} size={34} />
+          <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
+        </Pressable>
+      ),
+    });
+  }, [otherId, styles]);
 
   // Mensajes que ya se mostraron: solo animamos los que llegan después de abrir el chat
   const seenIds = useRef(new Set<string>());
@@ -290,6 +313,8 @@ export default function ChatScreen({ route, navigation }: any) {
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
+  headerTitle: { flexDirection: 'row', alignItems: 'center', maxWidth: 260 },
+  headerName: { marginLeft: 10, fontSize: 17, fontWeight: '600', color: c.text, flexShrink: 1 },
   container: { flex: 1, backgroundColor: c.muted },
   productBar: {
     flexDirection: 'row',
@@ -359,6 +384,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingBottom: 10,
     marginRight: 10,
     fontSize: 16,
+    color: c.text, // Sin esto el texto sale negro también en modo oscuro
     borderWidth: 1,
     borderColor: c.border,
     maxHeight: 100,

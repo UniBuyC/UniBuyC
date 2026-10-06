@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { appWidth } from '../utils/layout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Product } from '../types';
 import { useAuthStore } from '../store/authStore';
@@ -13,7 +14,7 @@ import { STATUS_LABEL } from '../utils/productStatus';
 import { Heart } from 'lucide-react-native';
 import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
-const { width } = Dimensions.get('window');
+const width = appWidth();
 // Calculamos el ancho: (Pantalla - Padding total) / 2 columnas
 const CARD_WIDTH = (width - 48) / 2;
 

@@ -447,7 +447,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.muted },
   header: { position: 'absolute', left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
-  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.card + 'E6', borderWidth: 1, borderColor: c.border, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   headerRight: { flexDirection: 'row' },
   scrollContent: { flexGrow: 1 },
   heroImage: { width: '100%', height: 350, backgroundColor: c.surface },
