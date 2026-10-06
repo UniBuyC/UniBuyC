@@ -1,5 +1,5 @@
 {
-  "name": "UniByC",
+  "name": "UniBuyC",
   "slug": "unibyc",
   "version": "1.0.0",
   "runtimeVersion": {
@@ -11,8 +11,8 @@
     [
       "expo-image-picker",
       {
-        "photosPermission": "UniByC usa tus fotos para que agregues imágenes a tus productos.",
-        "cameraPermission": "UniByC usa la cámara para que tomes fotos de tus productos."
+        "photosPermission": "UniBuyC usa tus fotos para que agregues imágenes a tus productos.",
+        "cameraPermission": "UniBuyC usa la cámara para que tomes fotos de tus productos."
       }
     ]
   ],

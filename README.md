@@ -1,4 +1,4 @@
-# UniByC
+# UniBuyC
 
 Marketplace para estudiantes de la UAM: publica artículos con foto, busca productos y vendedores, chatea con compradores y califica productos.
 

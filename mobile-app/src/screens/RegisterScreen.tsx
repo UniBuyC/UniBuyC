@@ -141,7 +141,7 @@ export default function RegisterScreen({ navigation }: any) {
       // Celebración y de regreso al login
       await confirm({
         icon: 'celebrate',
-        title: '¡Bienvenid@ a UniByC!',
+        title: '¡Bienvenid@ a UniBuyC!',
         message: `Tu cuenta quedó lista, ${form.fullName.trim().split(' ')[0]}. Ya puedes iniciar sesión.`,
         confirmText: 'Ir a iniciar sesión',
       });

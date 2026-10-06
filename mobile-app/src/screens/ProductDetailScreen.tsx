@@ -96,7 +96,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `¡Mira este producto en UniByC! ${product.title} por $${product.price}.`,
+        message: `¡Mira este producto en UniBuyC! ${product.title} por $${product.price}.`,
       });
     } catch (error) {}
   };

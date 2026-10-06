@@ -154,7 +154,9 @@ export default function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* --- HEADER FIJO --- */}
       <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.brand}>UniByC</Text>
+        <Text style={styles.brand}>
+          UniBuy<Text style={{ color: c.primary }}>C</Text>
+        </Text>
 
         {/* Barra de Búsqueda */}
         <SearchBar
@@ -269,8 +271,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   brand: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: c.primary,
+    fontWeight: '800',
+    color: c.text,
     marginHorizontal: 16,
   },
   searchBar: {

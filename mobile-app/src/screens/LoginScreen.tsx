@@ -63,7 +63,7 @@ export default function LoginScreen({ navigation }: any) {
 
           <Animated.View entering={FadeInDown.delay(100).duration(500)}>
             <Text style={styles.brand}>
-              UniBy<Text style={styles.brandAccent}>C</Text>
+              UniBuy<Text style={styles.brandAccent}>C</Text>
             </Text>
             <Text style={styles.headline}>Compra y vende dentro de tu universidad</Text>
             <Text style={styles.caption}>Para alumnos y profesores de la UAM.</Text>
