@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
-import { Plus, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { getProducts } from '../api/products';
 import { getSellers } from '../api/users';
@@ -23,17 +23,20 @@ import PressableScale from '../components/anim/PressableScale';
 import { ProductGridSkeleton, ListSkeleton } from '../components/anim/Skeleton';
 import { haptic } from '../utils/haptics';
 import SearchBar from '../components/SearchBar';
-import { askToLogin } from '../navigation/navigationRef';
+import Avatar from '../components/Avatar';
 import { PRODUCT_CATEGORIES } from '../constants';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 const CATEGORIES = ['Todos', ...PRODUCT_CATEGORIES];
 
 type Mode = 'products' | 'sellers';
 
 export default function HomeScreen({ navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight(); // La barra de pestañas flota sobre el contenido
-  const { token, user } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [mode, setMode] = useState<Mode>('products');
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -118,14 +121,6 @@ export default function HomeScreen({ navigation }: any) {
     setMode(next);
   };
 
-  const handleAdd = () => {
-    if (!token) {
-      askToLogin('Inicia sesión para publicar artículos.');
-      return;
-    }
-    navigation.navigate('AddProduct');
-  };
-
   const renderSeller = ({ item, index }: { item: Seller; index: number }) => {
     const isMe = item.id === user?.id;
     return (
@@ -134,9 +129,7 @@ export default function HomeScreen({ navigation }: any) {
         style={styles.sellerCard}
         onPress={() => navigation.navigate('SellerProfile', { seller: { id: item.id, fullName: item.fullName } })}
       >
-        <View style={styles.sellerAvatar}>
-          <Text style={styles.sellerAvatarText}>{item.fullName.charAt(0).toUpperCase()}</Text>
-        </View>
+        <Avatar seed={item.id} size={48} style={{ marginRight: 14 }} />
         <View style={{ flex: 1 }}>
           <Text style={styles.sellerName} numberOfLines={1}>
             {item.fullName}{isMe ? ' (tú)' : ''}
@@ -147,7 +140,7 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
         </View>
         {/* @ts-ignore */}
-        <ChevronRight color="#D1D5DB" size={20} />
+        <ChevronRight color={c.textDisabled} size={20} />
       </PressableScale>
       </Animated.View>
     );
@@ -231,7 +224,7 @@ export default function HomeScreen({ navigation }: any) {
           )}
           numColumns={2} // <--- ESTO HACE LA MAGIA DEL GRID
           columnWrapperStyle={styles.columnWrapper} // Espacio entre columnas
-          contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 90 }]}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarHeight + 20 }]}
           keyboardDismissMode="on-drag"
           refreshControl={refreshControl}
           ListEmptyComponent={
@@ -259,36 +252,25 @@ export default function HomeScreen({ navigation }: any) {
         />
       )}
 
-      {/* Botón Flotante: encima de la barra de pestañas */}
-      {mode === 'products' && (
-        <TouchableOpacity
-          style={[styles.fab, { bottom: tabBarHeight + 20 }]}
-          onPress={handleAdd}
-          activeOpacity={0.9}
-        >
-          {/* @ts-ignore */}
-          <Plus color="white" size={28} />
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: c.background,
   },
   headerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
   },
   brand: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#10B981',
+    color: c.primary,
     marginHorizontal: 16,
   },
   searchBar: {
@@ -296,7 +278,7 @@ const styles = StyleSheet.create({
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
     borderRadius: 10,
     padding: 3,
     marginHorizontal: 16,
@@ -310,7 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   segmentItemActive: {
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -319,11 +301,11 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: c.textMuted,
     fontWeight: '500',
   },
   segmentTextActive: {
-    color: '#111827',
+    color: c.text,
     fontWeight: 'bold',
   },
   categoriesContainer: {
@@ -333,15 +315,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
     marginRight: 8,
   },
   categoryPillActive: {
-    backgroundColor: '#10B981', // Verde Activo
+    backgroundColor: c.primary, // Verde Activo
   },
   categoryText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: c.textMuted,
     fontWeight: '500',
   },
   categoryTextActive: {
@@ -360,45 +342,20 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   emptyText: {
-    color: '#9CA3AF',
+    color: c.textFaint,
     fontSize: 16,
     textAlign: 'center',
   },
   sellerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: c.borderLight,
   },
-  sellerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  sellerAvatarText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  sellerName: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
-  sellerMeta: { fontSize: 13, color: '#6B7280', marginTop: 3 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    backgroundColor: '#10B981',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+  sellerName: { fontSize: 16, fontWeight: 'bold', color: c.text },
+  sellerMeta: { fontSize: 13, color: c.textMuted, marginTop: 3 },
 });

@@ -8,8 +8,10 @@ import { resolveImageUrl } from '../api/apiClient';
 import PressableScale from './anim/PressableScale';
 import PopOnChange from './anim/PopOnChange';
 import { haptic } from '../utils/haptics';
+import { STATUS_LABEL } from '../utils/productStatus';
 // @ts-ignore
 import { Heart } from 'lucide-react-native';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 const { width } = Dimensions.get('window');
 // Calculamos el ancho: (Pantalla - Padding total) / 2 columnas
@@ -23,6 +25,8 @@ interface Props {
 }
 
 export const ProductCard = ({ product, onPress, index = 0 }: Props) => {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isOwn = useAuthStore((state) => state.user?.id) === product.sellerId;
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const isFav = isProductFavorite(product.id);
@@ -39,9 +43,17 @@ export const ProductCard = ({ product, onPress, index = 0 }: Props) => {
       <View style={styles.imageContainer}>
         <Image
           source={{ uri: resolveImageUrl(product.image) }}
-          style={styles.image}
+          style={[styles.image, product.status !== 'AVAILABLE' && styles.imageInactive]}
           resizeMode="cover"
         />
+        {/* Agotado / Vendido sobre la foto */}
+        {product.status && product.status !== 'AVAILABLE' && (
+          <View style={[styles.statusTag, { backgroundColor: STATUS_LABEL[product.status].background }]}>
+            <Text style={[styles.statusTagText, { color: STATUS_LABEL[product.status].color }]}>
+              {STATUS_LABEL[product.status].text}
+            </Text>
+          </View>
+        )}
         {isOwn ? (
           // En tus propios productos mostramos una etiqueta en lugar del corazón
           <View style={styles.ownTag}>
@@ -51,7 +63,7 @@ export const ProductCard = ({ product, onPress, index = 0 }: Props) => {
           <Pressable style={styles.heartButton} onPress={toggleFavorite} hitSlop={8}>
             <PopOnChange trigger={isFav} when={isFav} scale={1.5}>
               {/* @ts-ignore */}
-              <Heart size={16} color={isFav ? '#EF4444' : '#9CA3AF'} fill={isFav ? '#EF4444' : 'transparent'} />
+              <Heart size={16} color={isFav ? c.danger : c.textFaint} fill={isFav ? c.danger : 'transparent'} />
             </PopOnChange>
           </Pressable>
         )}
@@ -74,9 +86,9 @@ export const ProductCard = ({ product, onPress, index = 0 }: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     borderRadius: 12,
     marginBottom: 16,
     width: CARD_WIDTH,
@@ -93,13 +105,28 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: CARD_WIDTH, // Cuadrada
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
+  },
+  imageInactive: {
+    opacity: 0.5,
+  },
+  statusTag: {
+    position: 'absolute',
+    left: 8,
+    bottom: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusTagText: {
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   heartButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     padding: 6,
     borderRadius: 20,
     elevation: 2,
@@ -108,7 +135,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: c.info,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
@@ -124,14 +151,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#374151',
+    color: c.textSecondary,
     marginBottom: 4,
     height: 36, // Altura fija para 2 líneas
   },
   price: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#111827',
+    color: c.text,
   },
   footer: {
     marginTop: 4,
@@ -140,11 +167,11 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 11,
-    color: '#F59E0B',
+    color: c.star,
     fontWeight: '600',
   },
   noRating: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: c.textFaint,
   }
 });

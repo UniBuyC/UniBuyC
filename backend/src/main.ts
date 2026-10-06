@@ -22,8 +22,10 @@ async function bootstrap() {
     next();
   });
 
-  // Fotos de productos subidas por los usuarios (GET /uploads/archivo.jpg)
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
+  // Fotos subidas en local (GET /uploads/archivo.jpg). En la nube se guardan en Vercel Blob
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -32,6 +34,6 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000, '0.0.0.0');
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 void bootstrap();

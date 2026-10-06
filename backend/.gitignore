@@ -60,3 +60,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Fotos subidas por los usuarios
 /uploads/*
 !/uploads/.gitkeep
+.vercel
+.env*
+
+# Archivos de ayuda para agentes de IA instalados por integraciones (no son parte de la app)
+.agents/
+.claude/
+skills-lock.json

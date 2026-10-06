@@ -81,14 +81,21 @@ export class UsersService {
         fullName: true,
         matricula: true,
         createdAt: true,
-        _count: { select: { products: true } },
+        // Solo cuentan las publicaciones activas (ni eliminadas ni vendidas)
+        _count: {
+          select: {
+            products: { where: { deletedAt: null, status: { not: 'SOLD' } } },
+          },
+        },
       },
       orderBy: { fullName: 'asc' },
     });
 
     // Calificación del vendedor = promedio de las calificaciones de sus productos
     const ratings = await this.prisma.rating.findMany({
-      where: { product: { sellerId: { in: users.map((u) => u.id) } } },
+      where: {
+        product: { sellerId: { in: users.map((u) => u.id) }, deletedAt: null },
+      },
       select: { value: true, product: { select: { sellerId: true } } },
     });
     const bySeller = new Map<string, { sum: number; count: number }>();

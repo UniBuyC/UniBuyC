@@ -1,18 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, TextInput, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Pressable
+  View, Text, TextInput, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Keyboard, Pressable, Image
 } from 'react-native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 // @ts-ignore
-import { Send } from 'lucide-react-native';
+import { Send, Lock } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
-import { getChatMessages, sendMessage } from '../api/chat';
-import { Message } from '../types';
+import { getChatMessages, getConversation, sendMessage } from '../api/chat';
+import { Conversation, Message } from '../types';
+import { resolveImageUrl } from '../api/apiClient';
+import { STATUS_LABEL } from '../utils/productStatus';
 import PressableScale from '../components/anim/PressableScale';
 import { haptic } from '../utils/haptics';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 // Mensaje que escribí y todavía no confirma el servidor
 interface PendingMessage {
@@ -26,7 +29,9 @@ interface PendingMessage {
 
 type ChatItem = Message & { pending?: boolean; failed?: boolean; tempId?: string };
 
-export default function ChatScreen({ route }: any) {
+export default function ChatScreen({ route, navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { conversationId } = route.params;
   const { token, user } = useAuthStore();
   const { setActiveConversation, refresh } = useChatStore();
@@ -34,6 +39,9 @@ export default function ChatScreen({ route }: any) {
   const [pending, setPending] = useState<PendingMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // Producto del chat y si la conversación quedó cerrada (vendido / eliminado)
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const locked = !!conversation?.lockReason;
 
   // Mensajes que ya se mostraron: solo animamos los que llegan después de abrir el chat
   const seenIds = useRef(new Set<string>());
@@ -71,7 +79,11 @@ export default function ChatScreen({ route }: any) {
     if (!token) return;
     try {
       // Al pedir los mensajes el backend los marca como leídos
-      const data = await getChatMessages(conversationId, token);
+      const [data, info] = await Promise.all([
+        getChatMessages(conversationId, token),
+        getConversation(conversationId, token),
+      ]);
+      setConversation(info);
       if (!loadedOnce.current) {
         // Los mensajes que ya existían al abrir no se animan
         data.forEach((m) => seenIds.current.add(m.id));
@@ -100,12 +112,14 @@ export default function ChatScreen({ route }: any) {
       console.log('Error enviando mensaje', error);
       haptic.error();
       setPending(prev => prev.map(p => (p.tempId === item.tempId ? { ...p, failed: true } : p)));
+      // Si el chat se cerró mientras escribías, lo reflejamos de inmediato
+      getConversation(conversationId, token).then(setConversation).catch(() => {});
     }
   };
 
   const handleSend = () => {
     const content = inputText.trim();
-    if (!content || !token) return;
+    if (!content || !token || locked) return;
     setInputText('');
     haptic.light();
 
@@ -177,7 +191,7 @@ export default function ChatScreen({ route }: any) {
           <Text style={[styles.messageText, isMe ? styles.myText : styles.otherText]}>
             {item.content}
           </Text>
-          <Text style={[styles.timeText, isMe ? { color: '#E0F2F1' } : { color: '#9CA3AF' }]}>
+          <Text style={[styles.timeText, isMe ? { color: '#E0F2F1' } : { color: c.textFaint }]}>
             {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             {isMe ? status : ''}
           </Text>
@@ -196,6 +210,32 @@ export default function ChatScreen({ route }: any) {
       behavior="padding"
       keyboardVerticalOffset={headerHeight}
     >
+      {/* Franja con el producto del que trata el chat */}
+      {conversation?.product && (
+        <Pressable
+          style={styles.productBar}
+          disabled={!!conversation.product.deletedAt}
+          onPress={() => navigation.navigate('ProductDetail', { product: conversation.product })}
+        >
+          <Image source={{ uri: resolveImageUrl(conversation.product.image) }} style={styles.productImage} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.productTitle} numberOfLines={1}>{conversation.product.title}</Text>
+            <Text style={styles.productPrice}>${conversation.product.price.toFixed(2)}</Text>
+          </View>
+          {conversation.product.deletedAt ? (
+            <View style={[styles.productStatus, { backgroundColor: c.dangerSoft }]}>
+              <Text style={[styles.productStatusText, { color: c.dangerText }]}>Eliminado</Text>
+            </View>
+          ) : conversation.product.status !== 'AVAILABLE' ? (
+            <View style={[styles.productStatus, { backgroundColor: STATUS_LABEL[conversation.product.status].background }]}>
+              <Text style={[styles.productStatusText, { color: STATUS_LABEL[conversation.product.status].color }]}>
+                {STATUS_LABEL[conversation.product.status].text}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+      )}
+
       <FlatList
         // Lista invertida: el mensaje más nuevo queda siempre abajo, junto al campo de texto
         inverted
@@ -207,6 +247,18 @@ export default function ChatScreen({ route }: any) {
         keyboardShouldPersistTaps="handled"
       />
 
+      {locked ? (
+        // Chat cerrado: los mensajes quedan como registro y ya no se puede escribir
+        <View style={[styles.lockedBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+          {/* @ts-ignore */}
+          <Lock size={18} color={c.textMuted} />
+          <Text style={styles.lockedText}>
+            {conversation?.lockReason === 'sold'
+              ? 'Producto vendido. Esta conversación quedó cerrada y se conserva como registro.'
+              : 'La publicación se eliminó. Esta conversación quedó cerrada y se conserva como registro.'}
+          </Text>
+        </View>
+      ) : (
       <View
         style={[
           styles.inputContainer,
@@ -217,7 +269,7 @@ export default function ChatScreen({ route }: any) {
         <TextInput
           style={styles.input}
           placeholder="Escribe un mensaje..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={c.textFaint}
           value={inputText}
           onChangeText={setInputText}
           multiline
@@ -232,12 +284,37 @@ export default function ChatScreen({ route }: any) {
           <Send color="white" size={20} />
         </PressableScale>
       </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.muted },
+  productBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.card,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  productImage: { width: 40, height: 40, borderRadius: 8, marginRight: 10, backgroundColor: c.muted },
+  productTitle: { fontSize: 14, fontWeight: '600', color: c.text },
+  productPrice: { fontSize: 13, color: c.primaryText, fontWeight: 'bold', marginTop: 1 },
+  productStatus: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginLeft: 8 },
+  productStatusText: { fontSize: 11, fontWeight: 'bold' },
+  lockedBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.background,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderColor: c.border,
+  },
+  lockedText: { flex: 1, marginLeft: 10, fontSize: 13, color: c.textMuted, lineHeight: 18 },
   listContent: {
     padding: 15,
     flexGrow: 1,
@@ -248,34 +325,34 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   myMessage: {
-    backgroundColor: '#10B981',
+    backgroundColor: c.primary,
     borderBottomRightRadius: 2,
   },
   otherMessage: {
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     borderBottomLeftRadius: 2,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   pendingMessage: { opacity: 0.6 },
-  failedMessage: { backgroundColor: '#F87171' },
-  failedText: { fontSize: 11, color: '#EF4444', alignSelf: 'flex-end', marginTop: -6, marginBottom: 10 },
+  failedMessage: { backgroundColor: c.danger },
+  failedText: { fontSize: 11, color: c.danger, alignSelf: 'flex-end', marginTop: -6, marginBottom: 10 },
   messageText: { fontSize: 15 },
   myText: { color: 'white' },
-  otherText: { color: '#1F2937' },
+  otherText: { color: c.text },
   timeText: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
   inputContainer: {
     flexDirection: 'row',
     paddingHorizontal: 10,
     paddingTop: 10,
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     alignItems: 'flex-end',
     borderTopWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
   },
   input: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: c.background,
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingTop: 10,
@@ -283,17 +360,17 @@ const styles = StyleSheet.create({
     marginRight: 10,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: c.border,
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: c.primary,
     padding: 12,
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#A7F3D0',
+    backgroundColor: c.primaryMuted,
   },
 });

@@ -10,7 +10,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 // @ts-ignore
-import { MessageSquare } from 'lucide-react-native';
+import { MessageSquare, Lock } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { goToLogin } from '../navigation/navigationRef';
@@ -21,8 +21,12 @@ import PressableScale from '../components/anim/PressableScale';
 import PopOnChange from '../components/anim/PopOnChange';
 import { ListSkeleton } from '../components/anim/Skeleton';
 import { Conversation } from '../types';
+import Avatar from '../components/Avatar';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 export default function ChatListScreen({ navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { token, user } = useAuthStore();
   // Las conversaciones las mantiene al día el store (se consulta cada pocos segundos)
   const { conversations, loaded, refresh } = useChatStore();
@@ -91,9 +95,7 @@ export default function ChatListScreen({ navigation }: any) {
         layout={LinearTransition.springify().damping(18)}
       >
       <PressableScale scaleTo={0.98} style={styles.chatItem} onPress={() => handlePress(item)}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{name.charAt(0).toUpperCase()}</Text>
-        </View>
+        <Avatar seed={item.buyerId === user?.id ? item.sellerId : item.buyerId} size={50} style={{ marginRight: 15 }} />
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={[styles.name, hasUnread && styles.unreadName]} numberOfLines={1}>{name}</Text>
@@ -102,8 +104,20 @@ export default function ChatListScreen({ navigation }: any) {
             </Text>
           </View>
           {/* Si hay producto asociado, lo mostramos */}
-          {item.product && (
-            <Text style={styles.productTag} numberOfLines={1}>{item.product.title}</Text>
+          {/* Producto del chat; si se cerró (vendido / eliminado) lo indicamos con candado */}
+          {(item.product || item.lockReason) && (
+            <View style={styles.tagRow}>
+              {item.product && (
+                <Text style={styles.productTag} numberOfLines={1}>{item.product.title}</Text>
+              )}
+              {item.lockReason && (
+                <View style={styles.lockTag}>
+                  {/* @ts-ignore */}
+                  <Lock size={10} color={c.textMuted} />
+                  <Text style={styles.lockTagText}>{item.lockReason === 'sold' ? 'Vendido' : 'Eliminado'}</Text>
+                </View>
+              )}
+            </View>
           )}
           <View style={styles.messageRow}>
             <Text style={[styles.message, hasUnread && styles.unreadMessage]} numberOfLines={1}>
@@ -128,7 +142,7 @@ export default function ChatListScreen({ navigation }: any) {
         <ScreenHeader title="Mensajes" />
         <View style={styles.emptyContainer}>
           {/* @ts-ignore */}
-          <MessageSquare size={48} color="#9CA3AF" />
+          <MessageSquare size={48} color={c.textFaint} />
           <Text style={styles.emptyText}>Tus mensajes aparecerán aquí</Text>
           <Text style={styles.emptySubtext}>Inicia sesión para contactar vendedores</Text>
           <TouchableOpacity style={styles.loginButton} onPress={goToLogin}>
@@ -159,7 +173,7 @@ export default function ChatListScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               {/* @ts-ignore */}
-              <MessageSquare size={48} color="#9CA3AF" />
+              <MessageSquare size={48} color={c.textFaint} />
               <Text style={styles.emptyText}>{term ? 'Sin resultados' : 'No tienes mensajes aún'}</Text>
               <Text style={styles.emptySubtext}>
                 {term ? 'Ninguna conversación coincide con tu búsqueda' : 'Contacta a un vendedor para empezar'}
@@ -172,59 +186,60 @@ export default function ChatListScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.card },
   list: { paddingHorizontal: 10 },
   chatItem: {
     flexDirection: 'row',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: c.borderLight,
     alignItems: 'center',
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  avatarText: { color: 'white', fontWeight: 'bold', fontSize: 18 },
   content: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  name: { flex: 1, fontSize: 16, fontWeight: '600', color: '#111827', marginRight: 8 },
+  name: { flex: 1, fontSize: 16, fontWeight: '600', color: c.text, marginRight: 8 },
   unreadName: { fontWeight: '800' },
-  time: { fontSize: 12, color: '#9CA3AF' },
-  unreadTime: { color: '#10B981', fontWeight: '700' },
-  productTag: {
-    alignSelf: 'flex-start',
-    fontSize: 10,
-    color: '#059669',
-    backgroundColor: '#ECFDF5',
+  time: { fontSize: 12, color: c.textFaint },
+  unreadTime: { color: c.primary, fontWeight: '700' },
+  tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  lockTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.muted,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    marginBottom: 4,
+    marginLeft: 6,
+  },
+  lockTagText: { fontSize: 10, color: c.textMuted, fontWeight: '600', marginLeft: 3 },
+  productTag: {
+    alignSelf: 'flex-start',
+    fontSize: 10,
+    color: c.primaryText,
+    backgroundColor: c.primarySoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    flexShrink: 1,
   },
   messageRow: { flexDirection: 'row', alignItems: 'center' },
-  message: { flex: 1, fontSize: 14, color: '#6B7280' },
-  unreadMessage: { color: '#111827', fontWeight: '600' },
+  message: { flex: 1, fontSize: 14, color: c.textMuted },
+  unreadMessage: { color: c.text, fontWeight: '600' },
   badge: {
     minWidth: 22,
     height: 22,
     borderRadius: 11,
     paddingHorizontal: 6,
-    backgroundColor: '#10B981',
+    backgroundColor: c.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
   },
   badgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 80, paddingHorizontal: 30 },
-  emptyText: { fontSize: 18, fontWeight: 'bold', color: '#374151', marginTop: 20 },
-  emptySubtext: { fontSize: 14, color: '#9CA3AF', marginTop: 8, textAlign: 'center' },
-  loginButton: { backgroundColor: '#10B981', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 12, marginTop: 24 },
+  emptyText: { fontSize: 18, fontWeight: 'bold', color: c.textSecondary, marginTop: 20 },
+  emptySubtext: { fontSize: 14, color: c.textFaint, marginTop: 8, textAlign: 'center' },
+  loginButton: { backgroundColor: c.primary, paddingHorizontal: 30, paddingVertical: 14, borderRadius: 12, marginTop: 24 },
   loginButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });

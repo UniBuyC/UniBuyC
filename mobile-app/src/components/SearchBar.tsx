@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 // @ts-ignore
 import { Search, X } from 'lucide-react-native';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 interface Props {
   value: string;
@@ -11,14 +12,16 @@ interface Props {
 }
 
 export default function SearchBar({ value, onChangeText, placeholder, style }: Props) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.searchBar, style]}>
       {/* @ts-ignore */}
-      <Search color="#9CA3AF" size={20} />
+      <Search color={c.textFaint} size={20} />
       <TextInput
         style={styles.searchInput}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={c.textFaint}
         value={value}
         onChangeText={onChangeText}
         autoCorrect={false}
@@ -27,18 +30,18 @@ export default function SearchBar({ value, onChangeText, placeholder, style }: P
       {value.length > 0 && (
         <TouchableOpacity onPress={() => onChangeText('')} hitSlop={10}>
           {/* @ts-ignore */}
-          <X color="#9CA3AF" size={18} />
+          <X color={c.textFaint} size={18} />
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 45,
@@ -48,6 +51,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 15,
-    color: '#374151',
+    color: c.textSecondary,
   },
 });

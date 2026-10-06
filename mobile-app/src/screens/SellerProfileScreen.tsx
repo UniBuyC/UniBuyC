@@ -8,8 +8,12 @@ import { getProducts } from '../api/products'; // Usaremos esto para filtrar por
 import { Product } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Avatar from '../components/Avatar';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 export default function SellerProfileScreen({ route, navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { seller } = route.params;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +53,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           {/* @ts-ignore */}
-          <ArrowLeft color="#1F2937" size={24} />
+          <ArrowLeft color={c.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Perfil del Vendedor</Text>
         <View style={{ width: 40 }} /> 
@@ -58,13 +62,11 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       <FlatList
         ListHeaderComponent={
           <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{seller.fullName.charAt(0).toUpperCase()}</Text>
-            </View>
+            <Avatar seed={seller.id} size={88} style={{ marginBottom: 10 }} />
             <Text style={styles.name}>{seller.fullName}</Text>
             <View style={styles.ratingRow}>
               {/* @ts-ignore */}
-              <Star size={16} color="#F59E0B" fill={ratingCount ? '#F59E0B' : 'transparent'} />
+              <Star size={16} color={c.star} fill={ratingCount ? c.star : 'transparent'} />
               <Text style={styles.ratingText}>
                 {ratingCount
                   ? `${ratingAverage.toFixed(1)} (${ratingCount} ${ratingCount === 1 ? 'calificación' : 'calificaciones'})`
@@ -80,7 +82,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                 onPress={() => toggleSellerFavorite({ id: seller.id, fullName: seller.fullName, rating: ratingAverage })}
               >
                 {/* @ts-ignore */}
-                <Heart size={20} color={isFav ? "white" : "#10B981"} fill={isFav ? "white" : "transparent"} />
+                <Heart size={20} color={isFav ? "white" : c.primary} fill={isFav ? "white" : "transparent"} />
                 <Text style={[styles.actionText, isFav && { color: 'white' }]}>
                   {isFav ? 'Siguiendo' : 'Seguir'}
                 </Text>
@@ -103,29 +105,27 @@ export default function SellerProfileScreen({ route, navigation }: any) {
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 20 }]}
-        ListEmptyComponent={loading ? <ActivityIndicator color="#10B981" /> : <Text style={styles.emptyText}>No hay productos activos</Text>}
+        ListEmptyComponent={loading ? <ActivityIndicator color={c.primary} /> : <Text style={styles.emptyText}>No hay productos activos</Text>}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.card },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, paddingBottom: 10 },
   headerTitle: { fontSize: 18, fontWeight: '600' },
   iconButton: { padding: 5 },
   profileInfo: { alignItems: 'center', padding: 20 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  avatarText: { fontSize: 32, fontWeight: 'bold', color: '#6B7280' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#111827' },
+  name: { fontSize: 22, fontWeight: 'bold', color: c.text },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  ratingText: { marginLeft: 5, color: '#6B7280' },
+  ratingText: { marginLeft: 5, color: c.textMuted },
   actionsRow: { flexDirection: 'row', marginTop: 15, marginBottom: 30 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#10B981', marginHorizontal: 5 },
-  followButton: { backgroundColor: 'white' },
-  followingButton: { backgroundColor: '#10B981' },
-  actionText: { marginLeft: 8, fontWeight: '600', color: '#10B981' },
-  sectionTitle: { alignSelf: 'flex-start', fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#374151' },
+  actionButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: c.primary, marginHorizontal: 5 },
+  followButton: { backgroundColor: c.card },
+  followingButton: { backgroundColor: c.primary },
+  actionText: { marginLeft: 8, fontWeight: '600', color: c.primary },
+  sectionTitle: { alignSelf: 'flex-start', fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: c.textSecondary },
   list: { paddingHorizontal: 15 },
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#9CA3AF' }
+  emptyText: { textAlign: 'center', marginTop: 20, color: c.textFaint }
 });

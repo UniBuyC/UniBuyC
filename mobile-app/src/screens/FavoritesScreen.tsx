@@ -6,8 +6,12 @@ import ScreenHeader from '../components/ScreenHeader';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 // @ts-ignore
 import { Heart, Star } from 'lucide-react-native';
+import Avatar from '../components/Avatar';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 export default function FavoritesScreen({ navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [activeTab, setActiveTab] = useState<'items' | 'sellers'>('items');
   const { favoriteProducts, favoriteSellers } = useFavorites();
   const tabBarHeight = useBottomTabBarHeight();
@@ -17,21 +21,19 @@ export default function FavoritesScreen({ navigation }: any) {
       style={styles.sellerCard}
       onPress={() => navigation.navigate('SellerProfile', { seller: { id: item.id, fullName: item.fullName } })}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{item.fullName.charAt(0).toUpperCase()}</Text>
-      </View>
+      <Avatar seed={item.id} size={50} style={{ marginRight: 15 }} />
       <View style={styles.sellerInfo}>
         <Text style={styles.sellerName}>{item.fullName}</Text>
         {item.rating > 0 && (
           <View style={styles.ratingRow}>
             {/* @ts-ignore */}
-            <Star size={12} color="#F59E0B" fill="#F59E0B" />
+            <Star size={12} color={c.star} fill={c.star} />
             <Text style={styles.ratingText}> {item.rating.toFixed(1)}</Text>
           </View>
         )}
       </View>
       {/* @ts-ignore */}
-      <Heart size={20} color="#EF4444" fill="#EF4444" />
+      <Heart size={20} color={c.danger} fill={c.danger} />
     </TouchableOpacity>
   );
 
@@ -91,21 +93,19 @@ export default function FavoritesScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  tabsContainer: { flexDirection: 'row', padding: 15, backgroundColor: '#F9FAFB' },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#E5E7EB' },
-  activeTab: { backgroundColor: '#10B981' }, // Verde UAM
-  tabText: { fontWeight: '600', color: '#6B7280' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.card },
+  tabsContainer: { flexDirection: 'row', padding: 15, backgroundColor: c.background },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: c.surface },
+  activeTab: { backgroundColor: c.primary }, // Verde UAM
+  tabText: { fontWeight: '600', color: c.textMuted },
   activeTabText: { color: 'white' },
   content: { flex: 1, paddingHorizontal: 15 },
-  emptyText: { textAlign: 'center', marginTop: 50, color: '#9CA3AF' },
+  emptyText: { textAlign: 'center', marginTop: 50, color: c.textFaint },
   // Estilos de Tarjeta Vendedor
-  sellerCard: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: 'white', borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F3F4F6' },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#374151' },
+  sellerCard: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: c.card, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: c.borderLight },
   sellerInfo: { flex: 1 },
-  sellerName: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
+  sellerName: { fontSize: 16, fontWeight: 'bold', color: c.text },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  ratingText: { fontSize: 12, color: '#6B7280', marginLeft: 4 },
+  ratingText: { fontSize: 12, color: c.textMuted, marginLeft: 4 },
 });

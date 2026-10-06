@@ -1,170 +1,198 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  Alert, 
-  ActivityIndicator, 
-  KeyboardAvoidingView, 
-  Platform,
-  ScrollView
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
-import { User } from 'lucide-react-native';
+import { Store } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { loginUser } from '../api/auth';
 import PressableScale from '../components/anim/PressableScale';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { haptic } from '../utils/haptics';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
+import { toast, apiErrorMessage } from '../store/feedbackStore';
 
 export default function LoginScreen({ navigation }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
+
   const loginAction = useAuthStore((state) => state.login);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa correo y contraseña');
+      toast.warning('Faltan datos', 'Escribe tu correo y tu contraseña');
       return;
     }
 
     setLoading(true);
     try {
-      const data = await loginUser(email, password);
+      const data = await loginUser(email.trim().toLowerCase(), password);
       await loginAction(data.token, data.user);
       navigation.replace('MainTabs');
     } catch (error: any) {
-      haptic.error();
-      const msg = error.response?.data?.message || 'Error de conexión';
-      Alert.alert('Error', Array.isArray(msg) ? msg[0] : msg);
+      toast.error('No pudimos iniciar sesión', apiErrorMessage(error, 'Revisa tu conexión e intenta de nuevo'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Círculo Gris del Logo */}
-        <Animated.View entering={FadeInDown.duration(500)} style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-             {/* @ts-ignore */}
-             <User size={60} color="#E5E7EB" />
-          </View>
-          <Text style={styles.title}>Bienvenid@ a</Text>
-          <Text style={styles.titleBrand}>UniByC</Text>
-        </Animated.View>
+    <KeyboardAvoidingView behavior="padding" style={styles.container}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 20 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        {/* PANEL DE BIENVENIDA */}
+        <View style={[styles.hero, { paddingTop: insets.top + 48 }]}>
+          <Animated.View entering={FadeInDown.duration(500)} style={styles.logoTile}>
+            {/* @ts-ignore */}
+            <Store color="white" size={36} strokeWidth={2} />
+          </Animated.View>
 
-        {/* Formulario */}
-        <Animated.View entering={FadeInUp.delay(150).duration(500)} style={styles.formContainer}>
-          <TextInput 
-            style={styles.input}
-            placeholder="correo@example.com"
-            placeholderTextColor="#9CA3AF"
+          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+            <Text style={styles.brand}>
+              UniBy<Text style={styles.brandAccent}>C</Text>
+            </Text>
+            <Text style={styles.headline}>Compra y vende dentro de tu universidad</Text>
+            <Text style={styles.caption}>Para alumnos y profesores de la UAM.</Text>
+          </Animated.View>
+        </View>
+
+        {/* FORMULARIO */}
+        <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.form}>
+          <TextInput
+            style={[styles.input, focused === 'email' && styles.inputFocused]}
+            placeholder="Correo institucional"
+            placeholderTextColor={c.textFaint}
             autoCapitalize="none"
             keyboardType="email-address"
+            textContentType="emailAddress"
             value={email}
             onChangeText={setEmail}
+            onFocus={() => setFocused('email')}
+            onBlur={() => setFocused(null)}
+            returnKeyType="next"
           />
 
-          <TextInput 
-            style={styles.input}
-            placeholder="Contraseña123@"
-            placeholderTextColor="#9CA3AF"
+          <TextInput
+            style={[styles.input, focused === 'password' && styles.inputFocused]}
+            placeholder="Contraseña"
+            placeholderTextColor={c.textFaint}
             secureTextEntry
+            textContentType="password"
             value={password}
             onChangeText={setPassword}
+            onFocus={() => setFocused('password')}
+            onBlur={() => setFocused(null)}
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
           />
 
-          {/* Botón Verde - Iniciar Sesión */}
-          <PressableScale 
-            style={styles.primaryButton} 
-            onPress={handleLogin}
-            disabled={loading}
-          >
+          <PressableScale style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
             {loading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
+              <Text style={styles.primaryButtonText}>Iniciar sesión</Text>
             )}
           </PressableScale>
 
-          {/* Botón Gris - Registrarse */}
-          <PressableScale 
-            style={styles.secondaryButton}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.secondaryButtonText}>+ Registrarse</Text>
+          <PressableScale style={styles.secondaryButton} onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.secondaryButtonText}>Crear cuenta</Text>
           </PressableScale>
 
           <PressableScale style={styles.guestLink} onPress={() => navigation.replace('MainTabs')}>
             <Text style={styles.guestText}>Ingresar como invitado</Text>
           </PressableScale>
         </Animated.View>
-
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Fondo Blanco Puro
+    backgroundColor: c.background,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 30,
+  hero: {
+    backgroundColor: c.primarySoft,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    paddingHorizontal: 28,
+    paddingBottom: 40,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  logoCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#F3F4F6', // Gris claro
+  logoTile: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: c.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 28,
+    shadowColor: c.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 8,
   },
-  title: {
-    fontSize: 24,
+  brand: {
+    fontSize: 46,
+    fontWeight: '800',
+    color: c.text,
+    letterSpacing: -1,
+  },
+  brandAccent: {
+    color: c.primary,
+  },
+  headline: {
+    fontSize: 22,
     fontWeight: '600',
-    color: '#111827',
+    color: c.text,
+    marginTop: 10,
+    lineHeight: 30,
   },
-  titleBrand: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827', // Negro
+  caption: {
+    fontSize: 15,
+    color: c.textMuted,
+    marginTop: 10,
   },
-  formContainer: {
-    width: '100%',
+  form: {
+    paddingHorizontal: 24,
+    paddingTop: 28,
   },
   input: {
-    borderBottomWidth: 1, // Línea abajo en vez de caja
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: c.card,
+    borderWidth: 1.5,
+    borderColor: c.border,
+    borderRadius: 14,
+    paddingHorizontal: 16,
     paddingVertical: 15,
-    marginBottom: 25,
     fontSize: 16,
-    color: '#374151',
+    color: c.text,
+    marginBottom: 12,
+  },
+  inputFocused: {
+    borderColor: c.primary,
   },
   primaryButton: {
-    backgroundColor: '#10B981', // Verde UAM
-    paddingVertical: 16,
-    borderRadius: 30,
+    backgroundColor: c.primary,
+    paddingVertical: 17,
+    borderRadius: 14,
     alignItems: 'center',
-    marginBottom: 15,
-    shadowColor: '#10B981',
+    marginTop: 8,
+    shadowColor: c.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -176,22 +204,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   secondaryButton: {
-    backgroundColor: '#F3F4F6', // Gris muy claro
+    borderWidth: 1.5,
+    borderColor: c.primary,
+    backgroundColor: c.card,
     paddingVertical: 16,
-    borderRadius: 30,
+    borderRadius: 14,
     alignItems: 'center',
-    marginBottom: 25,
+    marginTop: 12,
   },
   secondaryButtonText: {
-    color: '#374151',
+    color: c.primaryText,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   guestLink: {
     alignItems: 'center',
+    marginTop: 20,
+    padding: 6,
   },
   guestText: {
-    color: '#9CA3AF',
+    color: c.textMuted,
     fontSize: 14,
-  }
+  },
 });

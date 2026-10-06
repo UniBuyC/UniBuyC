@@ -10,12 +10,13 @@ import AddProductScreen from '../screens/AddProductScreen';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { askToLogin } from './navigationRef';
-import PressableScale from '../components/anim/PressableScale';
 import PopOnChange from '../components/anim/PopOnChange';
+import AnimatedTabBar from '../components/AnimatedTabBar';
 import { withTabFade } from '../components/anim/TabFade';
 import { haptic } from '../utils/haptics';
+import { useThemedStyles, ThemeColors } from '../theme';
 // @ts-ignore
-import { Home, MessageSquare, User, Heart, Plus } from 'lucide-react-native';
+import { Home, MessageSquare, User, Heart } from 'lucide-react-native';
 
 const Tab = createBottomTabNavigator();
 
@@ -24,31 +25,6 @@ const HomeTab = withTabFade(HomeScreen);
 const ChatsTab = withTabFade(ChatListScreen);
 const FavoritesTab = withTabFade(FavoritesScreen);
 const ProfileTab = withTabFade(ProfileScreen);
-
-// Componente personalizado para el botón central "+"
-const CustomTabBarButton = ({ children, onPress }: any) => (
-  <PressableScale
-    scaleTo={0.88}
-    style={{
-      top: -20, // Lo subimos para que flote
-      justifyContent: 'center',
-      alignItems: 'center',
-      ...styles.shadow
-    }}
-    onPress={onPress}
-  >
-    <View style={{
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: '#10B981', // Verde UAM
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}>
-      {children}
-    </View>
-  </PressableScale>
-);
 
 // Icono de pestaña que rebota al seleccionarse
 const TabIcon = ({ Icon, color, focused }: { Icon: any; color: string; focused: boolean }) => (
@@ -59,6 +35,7 @@ const TabIcon = ({ Icon, color, focused }: { Icon: any; color: string; focused: 
 
 // Globo de no leídos que rebota cada vez que cambia el número
 const UnreadBadge = ({ count }: { count: number }) => {
+  const styles = useThemedStyles(createStyles);
   if (count <= 0) return null;
   return (
     <PopOnChange trigger={count} scale={1.4} style={styles.badge}>
@@ -76,23 +53,12 @@ export default function TabNavigator() {
 
   return (
     <Tab.Navigator
+      // Barra propia con el indicador deslizante
+      tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: '#10B981',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          height: 60 + bottomSpace,
-          paddingBottom: bottomSpace,
-          paddingTop: 8,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          backgroundColor: 'white',
-          position: 'absolute',
-          bottom: 0,
-          elevation: 5,
-          borderTopWidth: 0,
-        }
+        // Misma altura que la barra propia: las pantallas la usan para dejar espacio abajo
+        tabBarStyle: { position: 'absolute', height: 64 + bottomSpace },
       }}
       // Vibración ligera al cambiar de pestaña
       screenListeners={{ tabPress: () => haptic.selection() }}
@@ -118,20 +84,10 @@ export default function TabNavigator() {
         }}
       />
 
-      {/* Botón Central de Publicar */}
+      {/* Botón Central de Publicar (lo dibuja la barra propia) */}
       <Tab.Screen
         name="Publicar"
-        component={AddProductScreen} // Esto abre la pantalla como tab, idealmente sería un modal
-        options={{
-          tabBarIcon: () => (
-            // @ts-ignore
-            <Plus color="white" size={30} />
-          ),
-          tabBarButton: (props) => (
-            <CustomTabBarButton {...props} />
-          ),
-          tabBarLabel: () => null // Sin texto
-        }}
+        component={AddProductScreen}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault(); // Evitamos que abra como tab
@@ -139,7 +95,7 @@ export default function TabNavigator() {
               askToLogin('Inicia sesión para publicar artículos.');
               return;
             }
-            navigation.navigate('AddProduct'); // Navegamos al Stack Modal
+            navigation.navigate('AddProduct'); // Navegamos a la pantalla de publicar
           },
         })}
       />
@@ -162,14 +118,7 @@ export default function TabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  shadow: {
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.5,
-    elevation: 5,
-  },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -6,
@@ -178,11 +127,11 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     paddingHorizontal: 4,
-    backgroundColor: '#EF4444',
+    backgroundColor: c.danger,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'white',
+    borderColor: c.card,
   },
   badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
 });

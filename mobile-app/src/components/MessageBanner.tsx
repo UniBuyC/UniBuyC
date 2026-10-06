@@ -14,6 +14,7 @@ import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { navigationRef } from '../navigation/navigationRef';
 import { haptic } from '../utils/haptics';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 const POLL_MS = 5000;
 const VISIBLE_MS = 4000;
@@ -23,6 +24,8 @@ const HIDDEN_Y = -200;
 // cuando llega un mensaje de una conversación que no está abierta.
 // El aviso se puede deslizar hacia arriba para cerrarlo.
 export default function MessageBanner() {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { token, user } = useAuthStore();
   const { incoming, refresh, dismissIncoming, reset } = useChatStore();
@@ -119,12 +122,12 @@ export default function MessageBanner() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   wrapper: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 12, zIndex: 100 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 12,
     shadowColor: '#000',
@@ -133,19 +136,19 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
+    borderLeftColor: c.primary,
   },
   icon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#10B981',
+    backgroundColor: c.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  sender: { fontSize: 14, fontWeight: 'bold', color: '#111827' },
-  content: { fontSize: 14, color: '#4B5563', marginTop: 2 },
+  sender: { fontSize: 14, fontWeight: 'bold', color: c.text },
+  content: { fontSize: 14, color: c.textTertiary, marginTop: 2 },
   handle: {
     alignSelf: 'center',
     width: 36,

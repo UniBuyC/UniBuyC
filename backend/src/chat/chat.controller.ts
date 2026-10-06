@@ -39,6 +39,15 @@ export class ChatController {
     return this.chatService.getUserConversations(req.user.id);
   }
 
+  // Datos de la conversación: producto y si está cerrada (GET /chat/:id)
+  @Get(':id')
+  getConversation(
+    @Request() req: RequestWithUser,
+    @Param('id') conversationId: string,
+  ) {
+    return this.chatService.getConversation(req.user.id, conversationId);
+  }
+
   // 3. Ver mensajes de una charla (GET /chat/:id/messages) y marcarlos como leídos
   @Get(':id/messages')
   getMessages(

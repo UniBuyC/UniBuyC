@@ -13,13 +13,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
+import { put } from '@vercel/blob';
+import { mkdir, writeFile } from 'fs/promises';
+import { extname, join } from 'path';
 import { randomUUID } from 'crypto';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { RateProductDto } from './dto/rate-product.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 
@@ -55,16 +58,12 @@ export class ProductsController {
   }
 
   // 🔒 Subir foto de producto (multipart, campo "image", máx. 10 MB)
-  // Devuelve la ruta para guardarla en el campo "image" del producto
+  // Devuelve la ruta o URL para guardarla en el campo "image" del producto
   @UseGuards(AuthGuard('jwt'))
   @Post('upload-image')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (_req, file, cb) =>
-          cb(null, `${randomUUID()}${extname(file.originalname).toLowerCase() || '.jpg'}`),
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
@@ -74,9 +73,23 @@ export class ProductsController {
       },
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No se recibió ninguna imagen');
-    return { path: `/uploads/${file.filename}` };
+    const name = `${randomUUID()}${extname(file.originalname).toLowerCase() || '.jpg'}`;
+
+    // En la nube: Vercel Blob (el disco del servidor no es permanente)
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const blob = await put(`products/${name}`, file.buffer, {
+        access: 'public',
+        contentType: file.mimetype,
+      });
+      return { path: blob.url };
+    }
+
+    // En local: carpeta uploads/
+    await mkdir('./uploads', { recursive: true });
+    await writeFile(join('./uploads', name), file.buffer);
+    return { path: `/uploads/${name}` };
   }
 
   // 🔓 RUTA PÚBLICA
@@ -113,6 +126,17 @@ export class ProductsController {
     @Request() req: RequestWithUser,
   ) {
     return this.productsService.rate(id, req.user.id, rateProductDto.value);
+  }
+
+  // 🔒 Cambiar estado: disponible, agotado o vendido (solo el vendedor)
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusDto,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.productsService.updateStatus(id, updateStatusDto.status, req.user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))

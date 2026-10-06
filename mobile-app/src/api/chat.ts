@@ -17,6 +17,14 @@ export const getMyConversations = async (token: string): Promise<Conversation[]>
   return response.data;
 };
 
+// Datos de un chat: producto y si está cerrado
+export const getConversation = async (conversationId: string, token: string): Promise<Conversation> => {
+  const response = await api.get(`/chat/${conversationId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};
+
 // 3. Obtener mensajes de un chat específico
 export const getChatMessages = async (conversationId: string, token: string): Promise<Message[]> => {
   const response = await api.get(`/chat/${conversationId}/messages`, {

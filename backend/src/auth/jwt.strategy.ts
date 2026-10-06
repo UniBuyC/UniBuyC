@@ -1,6 +1,7 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
+import { JWT_SECRET } from './jwt-secret';
 
 // 1. Definimos qué datos esperamos recibir en el token para evitar "any"
 interface JwtPayload {
@@ -16,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       // IMPORTANTE: Debe ser la misma clave que pusimos en auth.module.ts
-      secretOrKey: 'MI_SECRETO_SUPER_SEGURO',
+      secretOrKey: JWT_SECRET,
     });
   }
 

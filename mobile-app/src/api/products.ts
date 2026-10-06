@@ -1,5 +1,5 @@
 import { api, API_URL } from './apiClient';
-import { Product, ProductRating } from '../types';
+import { Product, ProductRating, ProductStatus } from '../types';
 
 // 1. Obtener todos los productos (Público - Para el Home)
 export const getProducts = async (): Promise<Product[]> => {
@@ -26,6 +26,14 @@ export const createProduct = async (productData: Partial<Product>, token: string
 // Editar un producto propio (Privado)
 export const updateProduct = async (id: string, productData: Partial<Product>, token: string) => {
   const response = await api.patch(`/products/${id}`, productData, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+// Cambiar estado: disponible, agotado o vendido (Privado, solo el vendedor)
+export const updateProductStatus = async (id: string, status: ProductStatus, token: string): Promise<Product> => {
+  const response = await api.patch(`/products/${id}/status`, { status }, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;

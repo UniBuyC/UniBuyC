@@ -5,6 +5,12 @@ export interface User {
   matricula: string;
 }
 
+// Disponible, agotado (temporal) o vendido (definitivo: cierra sus chats)
+export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'SOLD';
+
+// Por qué un chat ya no acepta mensajes (null = abierto)
+export type LockReason = 'deleted' | 'sold' | null;
+
 export interface Product {
   id: string;
   title: string;
@@ -17,6 +23,8 @@ export interface Product {
     fullName: string;
     matricula: string;
   };
+  status: ProductStatus;
+  soldAt?: string | null;
   ratingAverage?: number;
   ratingCount?: number;
   createdAt?: string;
@@ -53,13 +61,12 @@ export interface Conversation {
   id: string;
   buyerId: string;
   sellerId: string;
-  product?: {
-    title: string;
-    image: string;
-  };
+  // Producto del chat; se conserva aunque se haya eliminado (deletedAt) como registro
+  product?: (Product & { deletedAt?: string | null }) | null;
   buyer: { fullName: string };
   seller: { fullName: string };
   messages: Message[];
   unreadCount: number;
+  lockReason: LockReason;
   updatedAt: string;
 }

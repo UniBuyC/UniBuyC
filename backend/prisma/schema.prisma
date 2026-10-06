@@ -1,7 +1,9 @@
 // backend/prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" para tu computadora; "rhel-openssl-3.0.x" para los servidores de Vercel
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -39,12 +41,24 @@ model Product {
   sellerId    String
   seller      User     @relation(fields: [sellerId], references: [id])
 
+  // Disponible, agotado (temporal) o vendido (definitivo: cierra sus chats)
+  status      ProductStatus @default(AVAILABLE)
+  soldAt      DateTime?
+  // Borrado lógico: se oculta de la app pero sus chats lo conservan como registro
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Un producto puede tener muchas conversaciones asociadas
   conversations Conversation[]
   ratings       Rating[]
+}
+
+enum ProductStatus {
+  AVAILABLE
+  SOLD_OUT
+  SOLD
 }
 
 // Calificación de un usuario a un producto (1 a 5 estrellas, una por usuario)

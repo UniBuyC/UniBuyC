@@ -1,6 +1,6 @@
-import { Alert } from 'react-native';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import type { RootStackParamList } from './AppNavigator';
+import { confirm } from '../store/feedbackStore';
 
 // Referencia global para navegar desde fuera de las pantallas (avisos, cerrar sesión)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -13,9 +13,13 @@ export const goToLogin = () => {
 };
 
 // Para invitados: explica por qué necesita cuenta y ofrece iniciar sesión
-export const askToLogin = (reason: string) => {
-  Alert.alert('Necesitas una cuenta', reason, [
-    { text: 'Ahora no', style: 'cancel' },
-    { text: 'Iniciar sesión', onPress: goToLogin },
-  ]);
+export const askToLogin = async (reason: string) => {
+  const ok = await confirm({
+    icon: 'login',
+    title: 'Necesitas una cuenta',
+    message: reason,
+    confirmText: 'Iniciar sesión',
+    cancelText: 'Ahora no',
+  });
+  if (ok) goToLogin();
 };

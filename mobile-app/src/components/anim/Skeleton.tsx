@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { useTheme, useThemedStyles, ThemeColors } from '../../theme';
 
 interface BoxProps {
   width?: DimensionValue;
@@ -17,6 +18,8 @@ interface BoxProps {
 
 // Bloque gris que "respira" mientras carga el contenido real
 export function SkeletonBox({ width = '100%', height, radius = 8, style }: BoxProps) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const opacity = useSharedValue(0.5);
   useEffect(() => {
     opacity.value = withRepeat(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }), -1, true);
@@ -25,7 +28,7 @@ export function SkeletonBox({ width = '100%', height, radius = 8, style }: BoxPr
 
   return (
     <Animated.View
-      style={[{ width, height, borderRadius: radius, backgroundColor: '#E5E7EB' }, animatedStyle, style]}
+      style={[{ width, height, borderRadius: radius, backgroundColor: c.surface }, animatedStyle, style]}
     />
   );
 }
@@ -34,6 +37,8 @@ const CARD_WIDTH = (Dimensions.get('window').width - 48) / 2;
 
 // Cuadrícula de tarjetas de producto (Inicio)
 export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.grid}>
       {Array.from({ length: count }).map((_, i) => (
@@ -52,6 +57,8 @@ export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
 
 // Filas con avatar (Chats, Vendedores, Mis Publicaciones)
 export function ListSkeleton({ count = 6, square = false }: { count?: number; square?: boolean }) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={{ padding: 16 }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -67,7 +74,7 @@ export function ListSkeleton({ count = 6, square = false }: { count?: number; sq
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -77,7 +84,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: 'white',
+    backgroundColor: c.card,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,

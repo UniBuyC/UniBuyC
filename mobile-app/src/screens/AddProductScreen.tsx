@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
@@ -24,10 +23,14 @@ import { PRODUCT_CATEGORIES } from '../constants';
 import { Product } from '../types';
 import PressableScale from '../components/anim/PressableScale';
 import { haptic } from '../utils/haptics';
+import { toast, chooseOption, apiErrorMessage } from '../store/feedbackStore';
+import { useTheme, useThemedStyles, ThemeColors } from '../theme';
 
 const PLACEHOLDER_IMAGE = 'https://placehold.co/600x400/png';
 
 export default function AddProductScreen({ navigation, route }: any) {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const token = useAuthStore((state) => state.token); // Necesitamos el token para permiso
@@ -55,9 +58,9 @@ export default function AddProductScreen({ navigation, route }: any) {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso necesario', source === 'camera'
-        ? 'Permite el acceso a la cámara para tomar la foto.'
-        : 'Permite el acceso a tus fotos para elegir una imagen.');
+      toast.warning('Necesitamos permiso', source === 'camera'
+        ? 'Permite el acceso a la cámara en la configuración del celular'
+        : 'Permite el acceso a tus fotos en la configuración del celular');
       return;
     }
 
@@ -83,38 +86,42 @@ export default function AddProductScreen({ navigation, route }: any) {
 
       const path = await uploadProductImage(photo.uri, token, 'image/jpeg');
       setForm((f) => ({ ...f, image: path }));
-      haptic.success();
+      toast.success('Foto lista');
     } catch (error: any) {
       // Aparece en la terminal de Expo para poder diagnosticar
       console.log('Error subiendo foto:', error?.message, '| original:', asset.uri, asset.width, 'x', asset.height);
-      Alert.alert('No se pudo subir la foto', error?.message || 'Intenta de nuevo');
+      toast.error('No se pudo subir la foto', error?.message || 'Intenta de nuevo');
     } finally {
       setUploading(false);
     }
   };
 
-  const choosePhoto = () => {
-    Alert.alert('Foto del producto', '¿De dónde quieres tomarla?', [
-      { text: 'Cámara', onPress: () => pickImage('camera') },
-      { text: 'Galería', onPress: () => pickImage('library') },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
+  const choosePhoto = async () => {
+    const source = await chooseOption({
+      title: 'Foto del producto',
+      message: 'Una buena foto ayuda a vender más rápido',
+      options: [
+        { label: 'Tomar foto', icon: 'camera', value: 'camera' },
+        { label: 'Elegir de la galería', icon: 'image', value: 'library' },
+      ],
+    });
+    if (source) pickImage(source as 'camera' | 'library');
   };
 
   const handlePublish = async () => {
     // 1. Validaciones simples
     if (!form.title || !form.price || !form.description) {
-      Alert.alert('Faltan datos', 'Por favor llena todos los campos');
+      toast.warning('Faltan datos', 'Escribe el título, el precio y la descripción');
       return;
     }
     if (!form.category) {
-      Alert.alert('Falta la categoría', 'Elige una categoría para tu producto');
+      toast.warning('Falta la categoría', 'Elige una categoría para tu producto');
       return;
     }
 
     const price = parseFloat(form.price.replace(',', '.'));
     if (isNaN(price) || price <= 0) {
-      Alert.alert('Precio inválido', 'Escribe un precio mayor a 0');
+      toast.warning('Precio inválido', 'Escribe un precio mayor a 0');
       return;
     }
 
@@ -130,18 +137,15 @@ export default function AddProductScreen({ navigation, route }: any) {
       if (token) {
         if (editing) {
           await updateProduct(editing.id, productData, token);
-          haptic.success();
-          Alert.alert('¡Listo!', 'Tu publicación se actualizó');
+          toast.success('Cambios guardados', 'Tu publicación se actualizó');
         } else {
           await createProduct(productData, token);
-          haptic.success();
-          Alert.alert('¡Éxito!', 'Tu producto ya está en el mercadito');
+          toast.success('¡Publicado!', 'Tu producto ya está en el mercadito');
         }
         navigation.goBack(); // Regresar a la pantalla anterior
       }
     } catch (error) {
-      haptic.error();
-      Alert.alert('Error', editing ? 'No se pudieron guardar los cambios' : 'No se pudo publicar el producto');
+      toast.error(editing ? 'No se guardaron los cambios' : 'No se pudo publicar', apiErrorMessage(error, 'Intenta de nuevo'));
       console.log(error);
     } finally {
       setLoading(false);
@@ -170,7 +174,7 @@ export default function AddProductScreen({ navigation, route }: any) {
           ) : (
             <View style={styles.photoEmpty}>
               {/* @ts-ignore */}
-              <ImagePlus color="#10B981" size={40} />
+              <ImagePlus color={c.primary} size={40} />
               <Text style={styles.photoEmptyText}>Agregar foto</Text>
               <Text style={styles.photoHint}>Cámara o galería</Text>
             </View>
@@ -188,7 +192,7 @@ export default function AddProductScreen({ navigation, route }: any) {
           <TextInput
             style={styles.input}
             placeholder="Ej. Calculadora HP, Bata blanca..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.textFaint}
             value={form.title}
             onChangeText={(text) => setForm({...form, title: text})}
           />
@@ -199,7 +203,7 @@ export default function AddProductScreen({ navigation, route }: any) {
           <TextInput
             style={styles.input}
             placeholder="0.00"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.textFaint}
             keyboardType="decimal-pad"
             value={form.price}
             onChangeText={(text) => setForm({...form, price: text})}
@@ -228,7 +232,7 @@ export default function AddProductScreen({ navigation, route }: any) {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Describe el estado, lugar de entrega, etc."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.textFaint}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -253,10 +257,10 @@ export default function AddProductScreen({ navigation, route }: any) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: c.card,
   },
   photoBox: {
     width: '100%',
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
   },
   photo: { width: '100%', height: '100%' },
   photoEmpty: {
@@ -273,12 +277,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#A7F3D0',
+    borderColor: c.primaryMuted,
     borderRadius: 16,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: c.primarySoft,
   },
-  photoEmptyText: { marginTop: 8, fontSize: 16, fontWeight: 'bold', color: '#059669' },
-  photoHint: { marginTop: 2, fontSize: 13, color: '#6B7280' },
+  photoEmptyText: { marginTop: 8, fontSize: 16, fontWeight: 'bold', color: c.primaryText },
+  photoHint: { marginTop: 2, fontSize: 13, color: c.textMuted },
   changePhoto: {
     position: 'absolute',
     bottom: 10,
@@ -303,17 +307,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: c.textSecondary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    color: '#111827',
+    borderColor: c.border,
+    color: c.text,
   },
   textArea: {
     minHeight: 100,
@@ -326,15 +330,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: c.muted,
     marginRight: 8,
     marginBottom: 8,
   },
-  categoryPillActive: { backgroundColor: '#10B981' },
-  categoryText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
+  categoryPillActive: { backgroundColor: c.primary },
+  categoryText: { fontSize: 14, color: c.textMuted, fontWeight: '500' },
   categoryTextActive: { color: 'white', fontWeight: 'bold' },
   publishButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: c.primary,
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',

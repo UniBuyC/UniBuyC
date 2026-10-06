@@ -7,6 +7,7 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProductStatus } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -25,6 +26,8 @@ export class ProductsService {
   async findAll() {
     // Incluimos los datos del vendedor (nombre) para mostrarlos en la app
     const products = await this.prisma.product.findMany({
+      // En el Inicio no aparecen los eliminados ni los ya vendidos (los agotados sí, con etiqueta)
+      where: { deletedAt: null, status: { not: ProductStatus.SOLD } },
       include: {
         seller: {
           select: { fullName: true, matricula: true },
@@ -40,7 +43,7 @@ export class ProductsService {
   // Productos del usuario que inició sesión (para "Mis Publicaciones")
   async findMine(sellerId: string) {
     const products = await this.prisma.product.findMany({
-      where: { sellerId },
+      where: { sellerId, deletedAt: null }, // Incluye vendidos y agotados
       include: {
         seller: {
           select: { fullName: true, matricula: true },
@@ -58,22 +61,46 @@ export class ProductsService {
         seller: { select: { fullName: true, matricula: true } },
       },
     });
-    if (!product) throw new NotFoundException('Producto no encontrado');
+    if (!product || product.deletedAt) {
+      throw new NotFoundException('Esta publicación ya no está disponible');
+    }
     const [withRating] = await this.withRatings([product]);
     return withRating;
   }
 
   async update(id: string, updateProductDto: UpdateProductDto, userId: string) {
-    await this.assertOwner(id, userId);
+    const product = await this.assertOwner(id, userId);
+    if (product.status === ProductStatus.SOLD) {
+      throw new BadRequestException('Un producto vendido ya no se puede editar');
+    }
     return this.prisma.product.update({
       where: { id },
       data: updateProductDto,
     });
   }
 
+  // Disponible <-> Agotado se puede cambiar; Vendido es definitivo y cierra sus chats
+  async updateStatus(id: string, status: ProductStatus, userId: string) {
+    const product = await this.assertOwner(id, userId);
+    if (product.status === ProductStatus.SOLD) {
+      throw new BadRequestException('Este producto ya se marcó como vendido');
+    }
+    return this.prisma.product.update({
+      where: { id },
+      data: {
+        status,
+        soldAt: status === ProductStatus.SOLD ? new Date() : null,
+      },
+    });
+  }
+
+  // Borrado lógico: se oculta, pero los chats conservan el producto como registro
   async remove(id: string, userId: string) {
     await this.assertOwner(id, userId);
-    return this.prisma.product.delete({ where: { id } });
+    return this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   // --- CALIFICACIONES ---
@@ -102,7 +129,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
     });
-    if (!product) throw new NotFoundException('Producto no encontrado');
+    if (!product || product.deletedAt) throw new NotFoundException('Producto no encontrado');
     if (product.sellerId === userId) {
       throw new BadRequestException('No puedes calificar tu propio producto');
     }
@@ -118,10 +145,11 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
     });
-    if (!product) throw new NotFoundException('Producto no encontrado');
+    if (!product || product.deletedAt) throw new NotFoundException('Producto no encontrado');
     if (product.sellerId !== userId) {
       throw new ForbiddenException('Solo el vendedor puede modificar este producto');
     }
+    return product;
   }
 
   // Agrega ratingAverage y ratingCount a cada producto

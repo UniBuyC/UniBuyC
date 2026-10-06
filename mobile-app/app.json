@@ -1,4 +1,10 @@
 {
+  "name": "UniByC",
+  "slug": "unibyc",
+  "version": "1.0.0",
+  "runtimeVersion": {
+    "policy": "sdkVersion"
+  },
   "plugins": [
     "expo-secure-store",
     "expo-status-bar",
@@ -9,5 +15,21 @@
         "cameraPermission": "UniByC usa la cámara para que tomes fotos de tus productos."
       }
     ]
-  ]
+  ],
+  "userInterfaceStyle": "automatic",
+  "extra": {
+    "eas": {
+      "projectId": "33cc135b-1ca6-4731-bdea-aeff5c99e05d"
+    }
+  },
+  "owner": "4ng3l-0g",
+  "updates": {
+    "url": "https://u.expo.dev/33cc135b-1ca6-4731-bdea-aeff5c99e05d"
+  },
+  "android": {
+    "permissions": [
+      "android.permission.RECORD_AUDIO"
+    ]
+  },
+  "ios": {}
 }
