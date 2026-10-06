@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Variables de entorno (usa backend/.env.example como plantilla)
+.env
+.env.*
+!.env.example
+
+# Prisma: cliente generado que no se usa (el cliente vive en node_modules)
+backend/generated/
+
+# Sistema y logs
+.DS_Store
+*.log

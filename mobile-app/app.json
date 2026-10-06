@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    "expo-secure-store",
+    "expo-status-bar",
+    [
+      "expo-image-picker",
+      {
+        "photosPermission": "UniByC usa tus fotos para que agregues imágenes a tus productos.",
+        "cameraPermission": "UniByC usa la cámara para que tomes fotos de tus productos."
+      }
+    ]
+  ]
+}

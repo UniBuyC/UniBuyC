@@ -1,0 +1,104 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  matricula String    @unique
+  password  String
+  fullName  String
+  role      String    @default("STUDENT")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  products  Product[] 
+  
+  // Relaciones de Chat (Un usuario puede ser comprador o vendedor)
+  conversationsBuy  Conversation[] @relation("BuyerRelation")
+  conversationsSell Conversation[] @relation("SellerRelation")
+  messages          Message[]
+  ratings           Rating[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  category    String
+  image       String
+  
+  sellerId    String
+  seller      User     @relation(fields: [sellerId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Un producto puede tener muchas conversaciones asociadas
+  conversations Conversation[]
+  ratings       Rating[]
+}
+
+// Calificación de un usuario a un producto (1 a 5 estrellas, una por usuario)
+model Rating {
+  id        String   @id @default(uuid())
+  value     Int
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  
+  // Quiénes hablan
+  buyerId   String
+  buyer     User     @relation("BuyerRelation", fields: [buyerId], references: [id])
+  
+  sellerId  String
+  seller    User     @relation("SellerRelation", fields: [sellerId], references: [id])
+  
+  // Sobre qué producto (Opcional, por si borran el producto pero quieren seguir hablando)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  messages  Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Regla: No puede haber dos chats idénticos entre las mismas personas por el mismo producto
+  @@unique([buyerId, sellerId, productId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  // Se llena cuando el destinatario abre el chat
+  readAt         DateTime?
+
+  createdAt      DateTime     @default(now())
+}
