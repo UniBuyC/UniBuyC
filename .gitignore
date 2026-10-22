@@ -17,3 +17,6 @@ backend/generated/
 # Sistema y logs
 .DS_Store
 *.log
+
+# Entrega con datos del equipo (solo local)
+docs/pruebas/Semana 11 - Segunda entrega del proyecto.pdf
