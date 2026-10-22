@@ -13,6 +13,7 @@ import ProductDetailScreen from '../screens/ProductDetailScreen';
 import ChatScreen from '../screens/ChatScreen';
 import SellerProfileScreen from '../screens/SellerProfileScreen'; // <--- 1. IMPORTAR
 import MyProductsScreen from '../screens/MyProductsScreen';
+import ReportProductScreen from '../screens/ReportProductScreen';
 import MessageBanner from '../components/MessageBanner';
 import ToastHost from '../components/feedback/ToastHost';
 import DialogHost from '../components/feedback/DialogHost';
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   Chat: { conversationId: string; title: string }; 
   SellerProfile: { seller: { id: string; fullName: string } }; // <--- 2. DEFINIR TIPO
   MyProducts: undefined;
+  ReportProduct: { product: Product };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -144,6 +146,16 @@ export default function AppNavigator() {
         />
 
         <Stack.Screen 
+          name="ReportProduct"
+          component={ReportProductScreen}
+          options={{
+            title: 'Reportar publicación',
+            headerTintColor: colors.primary,
+            animation: 'slide_from_bottom',
+          }}
+        />
+
+        <Stack.Screen
           name="MyProducts" 
           component={MyProductsScreen} 
           options={{ 

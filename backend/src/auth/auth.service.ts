@@ -3,6 +3,7 @@ import { UsersService } from '../users/users.service'; // Necesitamos acceso a l
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { assertAccountActive } from './account-status';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +29,9 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas (Password)');
     }
 
+    // Cuenta suspendida o bloqueada: no se entrega token
+    assertAccountActive(user);
+
     // 3. Generar Token
     return {
       token: this.jwtService.sign({ id: user.id, email: user.email }),
@@ -36,6 +40,7 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         matricula: user.matricula,
+        role: user.role, // El panel de administración lo usa para saber si puede entrar
       },
     };
   }

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductStatus } from '@prisma/client';
+import { activeSellerFilter } from '../auth/account-status';
 
 @Injectable()
 export class ProductsService {
@@ -27,7 +29,12 @@ export class ProductsService {
     // Incluimos los datos del vendedor (nombre) para mostrarlos en la app
     const products = await this.prisma.product.findMany({
       // En el Inicio no aparecen los eliminados ni los ya vendidos (los agotados sí, con etiqueta)
-      where: { deletedAt: null, status: { not: ProductStatus.SOLD } },
+      // ...ni los de vendedores suspendidos o bloqueados
+      where: {
+        deletedAt: null,
+        status: { not: ProductStatus.SOLD },
+        seller: { is: activeSellerFilter() },
+      },
       include: {
         seller: {
           select: { fullName: true, matricula: true },
@@ -139,6 +146,25 @@ export class ProductsService {
       update: { value },
     });
     return this.getRating(productId, userId);
+  }
+
+  // Reporte de un usuario sobre una publicación (uno por usuario)
+  async report(productId: string, userId: string, reason: string, details?: string) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product || product.deletedAt) throw new NotFoundException('Publicación no encontrada');
+    if (product.sellerId === userId) {
+      throw new BadRequestException('No puedes reportar tu propia publicación');
+    }
+    try {
+      await this.prisma.report.create({
+        data: { productId, reporterId: userId, reason, details: details?.trim() || null },
+      });
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error.code === 'P2002') throw new ConflictException('Ya reportaste esta publicación');
+      throw error;
+    }
+    return { ok: true };
   }
 
   private async assertOwner(productId: string, userId: string) {

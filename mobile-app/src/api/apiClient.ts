@@ -20,9 +20,11 @@ api.interceptors.response.use(
   (error) => {
     console.log('API Error:', error.response ? error.response.data : error.message);
 
-    // 401 con token = la sesión expiró o ya no es válida: cerrar sesión y volver al login
+    // 401 con token = la sesión expiró o ya no es válida: cerrar sesión y volver al login.
+    // 403 ACCOUNT_SUSPENDED = un administrador suspendió la cuenta: igual, con su motivo.
     const sentToken = !!error.config?.headers?.Authorization;
-    if (error.response?.status === 401 && sentToken && !handlingExpiredSession) {
+    const suspended = error.response?.status === 403 && error.response?.data?.error === 'ACCOUNT_SUSPENDED';
+    if ((error.response?.status === 401 || suspended) && sentToken && !handlingExpiredSession) {
       handlingExpiredSession = true;
       // require diferido para no crear dependencias circulares entre módulos
       const { useAuthStore } = require('../store/authStore');
@@ -33,7 +35,8 @@ api.interceptors.response.use(
         .logout()
         .then(() => {
           goToLogin();
-          toast.warning('Tu sesión expiró', 'Vuelve a iniciar sesión');
+          if (suspended) toast.error('Cuenta suspendida', error.response.data.message);
+          else toast.warning('Tu sesión expiró', 'Vuelve a iniciar sesión');
         })
         .finally(() => {
           handlingExpiredSession = false;

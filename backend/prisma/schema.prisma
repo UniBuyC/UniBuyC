@@ -18,6 +18,11 @@ model User {
   password  String
   fullName  String
   role      String    @default("STUDENT")
+
+  // Moderación: suspensión temporal (hasta una fecha) o bloqueo permanente
+  suspendedUntil   DateTime?
+  bannedAt         DateTime?
+  suspensionReason String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
@@ -28,6 +33,7 @@ model User {
   conversationsSell Conversation[] @relation("SellerRelation")
   messages          Message[]
   ratings           Rating[]
+  reports           Report[]
 }
 
 model Product {
@@ -53,6 +59,7 @@ model Product {
   // Un producto puede tener muchas conversaciones asociadas
   conversations Conversation[]
   ratings       Rating[]
+  reports       Report[]
 }
 
 enum ProductStatus {
@@ -115,4 +122,39 @@ model Message {
   readAt         DateTime?
 
   createdAt      DateTime     @default(now())
+}
+// Correos y matrículas bloqueados permanentemente: no pueden volver a registrarse,
+// aunque la cuenta original se elimine
+model BannedIdentity {
+  id        String   @id @default(uuid())
+  email     String?
+  matricula String?
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([matricula])
+}
+
+// Reporte de un usuario sobre una publicación (uno por usuario y publicación)
+model Report {
+  id         String    @id @default(uuid())
+  // SCAM, PROHIBITED, INAPPROPRIATE, WRONG_INFO, SPAM u OTHER
+  reason     String
+  details    String?
+  // PENDING, RESOLVED (se tomó acción) o DISMISSED (no procedía)
+  status     String    @default("PENDING")
+  resolution String?
+  resolvedAt DateTime?
+
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  reporterId String
+  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime  @default(now())
+
+  @@unique([productId, reporterId])
+  @@index([status])
 }

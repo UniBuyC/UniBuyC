@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>UniBuyC · Administración</title>
+  <link rel="icon" type="image/png" href="/icon-192.png" />
+  <meta name="theme-color" content="#10B981" />
+  <style>
+    /* Paleta de la app (src/theme/colors.ts) */
+    :root {
+      --primary: #10B981; --primary-text: #059669; --primary-soft: #ECFDF5; --primary-muted: #A7F3D0;
+      --bg: #F9FAFB; --card: #FFFFFF; --muted: #F3F4F6; --surface: #E5E7EB; --border: #E5E7EB;
+      --text: #111827; --text-2: #374151; --text-muted: #6B7280; --text-faint: #9CA3AF;
+      --danger: #EF4444; --danger-text: #DC2626; --danger-soft: #FEE2E2;
+      --info: #2563EB; --info-soft: #EFF6FF; --warning: #F59E0B; --warning-soft: #FEF3C7;
+      --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary-text: #34D399; --primary-soft: #0E2A22; --primary-muted: #1F5C48;
+        --bg: #0B0F14; --card: #151A21; --muted: #1E252E; --surface: #2A323C; --border: #2A323C;
+        --text: #F3F4F6; --text-2: #D1D5DB; --text-muted: #9CA3AF; --text-faint: #6B7280;
+        --danger: #F87171; --danger-text: #F87171; --danger-soft: #3B1D1D;
+        --info: #60A5FA; --info-soft: #172235; --warning-soft: #3A2E12;
+        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+        color-scheme: dark;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body { font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; min-height: 100vh; }
+    button, input, textarea { font: inherit; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Login ---------- */
+    .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .login {
+      width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--border);
+      border-radius: 24px; padding: 32px 28px; box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .brand svg { width: 52px; height: 52px; flex-shrink: 0; filter: drop-shadow(0 6px 12px rgba(16,185,129,.3)); }
+    .brand h1 { font-size: 26px; margin: 0; font-weight: 800; letter-spacing: -.5px; }
+    .brand h1 span { color: var(--primary); }
+    .brand p { margin: 0; color: var(--text-muted); font-size: 13px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 14px 0 6px; }
+    .input {
+      width: 100%; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); outline: none; transition: border-color .15s;
+    }
+    .input:focus { border-color: var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
+      border-radius: 12px; padding: 12px 16px; font-weight: 700; transition: transform .08s, opacity .15s, background .15s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(16,185,129,.25); }
+    .btn-ghost { background: var(--muted); color: var(--text-2); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-soft-danger { background: var(--danger-soft); color: var(--danger-text); }
+    .btn-soft { background: var(--primary-soft); color: var(--primary-text); }
+    .btn-block { width: 100%; margin-top: 20px; padding: 14px; }
+    /* Campo de contraseña con botón de ojito */
+    .pw-field { position: relative; }
+    .pw-field .input { padding-right: 48px; }
+    .eye {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px;
+      display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent;
+      color: var(--text-muted); cursor: pointer;
+    }
+    .eye:hover { background: var(--muted); color: var(--text); }
+    .eye svg { width: 20px; height: 20px; }
+    .error { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--danger-soft); color: var(--danger-text); font-size: 13px; }
+
+    /* ---------- Panel ---------- */
+    header.top {
+      position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--card) 88%, transparent);
+      backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+    }
+    .top-inner { max-width: 1100px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+    .top-inner svg { width: 36px; height: 36px; }
+    .top-title { font-weight: 800; font-size: 18px; letter-spacing: -.3px; }
+    .top-title span { color: var(--primary); }
+    .pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-text); }
+    .spacer { flex: 1; }
+    .who { color: var(--text-muted); font-size: 13px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px 18px; box-shadow: var(--shadow); }
+    .stat .n { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+    .stat .l { color: var(--text-muted); font-size: 13px; }
+    .stat .sub { color: var(--text-faint); font-size: 12px; margin-top: 2px; }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar h2 { margin: 0; font-size: 20px; }
+    .search { position: relative; flex: 1; min-width: 220px; max-width: 380px; margin-left: auto; }
+    .search input { padding-left: 38px; }
+    .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-faint); }
+
+    .list { display: grid; gap: 10px; }
+    .user {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px;
+      box-shadow: var(--shadow); animation: rise .3s ease both;
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: var(--muted); }
+    .avatar svg { width: 100%; height: 100%; display: block; }
+    .name { font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .meta { color: var(--text-muted); font-size: 13px; overflow-wrap: anywhere; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .chip { font-size: 12px; padding: 2px 8px; border-radius: 8px; background: var(--muted); color: var(--text-2); }
+    .badge-admin { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--info-soft); color: var(--info); }
+    .badge-you { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-text); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .user.is-blocked { border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+    .user.is-blocked .avatar { opacity: .55; filter: grayscale(.6); }
+    .badge-suspended { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--warning-soft); color: #B45309; }
+    .badge-banned { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--danger-soft); color: var(--danger-text); }
+    @media (prefers-color-scheme: dark) { .badge-suspended { color: #FBBF24; } }
+    .reason { margin-top: 6px; font-size: 13px; color: var(--text-muted); font-style: italic; }
+    .btn-soft-warning { background: var(--warning-soft); color: #B45309; }
+    @media (prefers-color-scheme: dark) { .btn-soft-warning { color: #FBBF24; } }
+
+    /* Pestañas */
+    .tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--muted); margin-bottom: 16px; }
+    .tab { border: 0; background: transparent; color: var(--text-muted); font-weight: 700; padding: 9px 18px; border-radius: 10px; cursor: pointer; }
+    .tab.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+    .tab-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 800; }
+    .chip-report { background: var(--danger-soft); color: var(--danger-text); font-weight: 700; }
+    .clickable { cursor: pointer; }
+    .clickable:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+
+    /* Ficha de detalle */
+    .dialog.wide { max-width: 620px; max-height: calc(100vh - 40px); overflow-y: auto; text-align: left; padding: 0 0 20px; }
+    .detail-img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--muted); display: block; border-radius: 24px 24px 0 0; }
+    .detail-body { padding: 18px 22px 0; }
+    .detail-title { font-size: 22px; font-weight: 800; margin: 6px 0 2px; }
+    .detail-desc { white-space: pre-wrap; color: var(--text-2); margin: 12px 0; line-height: 1.5; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 14px 0; }
+    .detail-grid div { background: var(--muted); border-radius: 12px; padding: 10px 12px; }
+    .detail-grid b { display: block; font-size: 16px; }
+    .detail-grid span { font-size: 12px; color: var(--text-muted); }
+    .section-title { font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin: 18px 0 8px; }
+    .seller-box { display: flex; align-items: center; gap: 12px; background: var(--muted); border-radius: 14px; padding: 10px 12px; }
+    .seller-box .avatar { width: 40px; height: 40px; }
+    .report-item { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+    .report-item .r-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+    .r-reason { font-weight: 800; color: var(--danger-text); }
+    .r-status { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: var(--muted); color: var(--text-muted); }
+    .r-status.PENDING { background: var(--warning-soft); color: #B45309; }
+    .r-details { margin-top: 4px; font-size: 14px; color: var(--text-2); }
+    .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 22px 0; }
+    .detail-actions .btn { flex: 1; min-width: 140px; }
+
+    /* Publicaciones */
+    .product { grid-template-columns: auto 1fr auto; }
+    .thumb { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: var(--muted); display: block; }
+    .price { color: var(--primary-text); font-weight: 800; }
+    .status-chip { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 8px; }
+    .status-AVAILABLE { background: var(--primary-soft); color: var(--primary-text); }
+    .status-SOLD_OUT { background: var(--warning-soft); color: #B45309; }
+    .status-SOLD { background: var(--muted); color: var(--text-muted); }
+
+    /* Opciones de suspensión */
+    .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 16px; }
+    .option {
+      border: 1.5px solid var(--border); background: var(--bg); color: var(--text-2); border-radius: 12px;
+      padding: 10px 8px; font-weight: 700; cursor: pointer; text-align: center;
+    }
+    .option.selected { border-color: var(--warning); background: var(--warning-soft); color: var(--text); }
+    .option.danger.selected { border-color: var(--danger); background: var(--danger-soft); }
+    .note { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--danger-soft); color: var(--danger-text); font-size: 13px; text-align: left; }
+    textarea.input { resize: vertical; min-height: 70px; }
+    .actions .btn { padding: 9px 12px; font-size: 13px; }
+    .empty { text-align: center; color: var(--text-muted); padding: 40px 0; }
+
+    @media (max-width: 640px) {
+      .user { grid-template-columns: auto 1fr; }
+      .actions { grid-column: 1 / -1; }
+      .actions .btn { flex: 1; }
+      .who { display: none; }
+    }
+
+    /* ---------- Diálogos ---------- */
+    .backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center;
+      padding: 20px; z-index: 50; animation: fade .15s ease;
+    }
+    @keyframes fade { from { opacity: 0; } }
+    .dialog {
+      width: 100%; max-width: 420px; background: var(--card); border-radius: 24px; padding: 26px 22px 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.3); animation: pop .2s ease;
+    }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+    .dialog .icon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; }
+    .dialog .icon svg { width: 30px; height: 30px; }
+    .dialog h3 { margin: 0; text-align: center; font-size: 20px; }
+    .dialog p { color: var(--text-muted); text-align: center; margin: 8px 0 0; }
+    .dialog ul { color: var(--text-2); margin: 14px 0 0; padding-left: 20px; font-size: 14px; }
+    .dialog .row { display: flex; gap: 10px; margin-top: 22px; }
+    .dialog .row .btn { flex: 1; padding: 13px; }
+    .pw-row { display: flex; gap: 8px; margin-top: 16px; }
+    .pw-row .input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px; }
+    .pw-row .btn { padding: 0 12px; }
+
+    /* ---------- Avisos ---------- */
+    .toasts { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 100; display: grid; gap: 8px; width: min(420px, calc(100% - 24px)); }
+    .toast {
+      display: flex; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--border);
+      border-left: 4px solid var(--primary); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow);
+      animation: drop .25s ease;
+    }
+    .toast.error { border-left-color: var(--danger); }
+    @keyframes drop { from { opacity: 0; transform: translateY(-10px); } }
+    .spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <section id="login" class="login-wrap">
+    <form class="login" id="loginForm" autocomplete="on">
+      <div class="brand">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logo" /></svg>
+        <div>
+          <h1>UniBuy<span>C</span></h1>
+          <p>Panel de administración</p>
+        </div>
+      </div>
+      <label for="email">Correo</label>
+      <input class="input" id="email" type="email" autocomplete="username" required />
+      <label for="password">Contraseña</label>
+      <div class="pw-field">
+        <input class="input" id="password" type="password" autocomplete="current-password" required />
+        <button class="eye" id="togglePw" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+          <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.8 17.8 0 0 1-2.1 3.1M6.6 6.6A17.6 17.6 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M2 2l20 20"/></svg>
+        </button>
+      </div>
+      <button class="btn btn-primary btn-block" id="loginBtn" type="submit">Entrar</button>
+      <div class="error" id="loginError" hidden></div>
+    </form>
+  </section>
+
+  <!-- PANEL -->
+  <section id="panel" hidden>
+    <header class="top">
+      <div class="top-inner">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logo" /></svg>
+        <div class="top-title">UniBuy<span>C</span></div>
+        <span class="pill">Admin</span>
+        <div class="spacer"></div>
+        <span class="who" id="who"></span>
+        <button class="btn btn-ghost" id="logoutBtn">Salir</button>
+      </div>
+    </header>
+    <main>
+      <div class="stats" id="stats"></div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="users" role="tab">Usuarios</button>
+        <button class="tab" data-tab="products" role="tab">Publicaciones</button>
+        <button class="tab" data-tab="reports" role="tab">Reportes <span class="tab-badge" id="reportsBadge" hidden></span></button>
+      </div>
+      <div class="toolbar">
+        <h2 id="sectionTitle">Usuarios</h2>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input class="input" id="search" type="search" placeholder="Buscar por nombre, correo o matrícula" />
+        </div>
+      </div>
+      <div class="list" id="users"></div>
+      <div class="list" id="products" hidden></div>
+      <div class="list" id="reports" hidden></div>
+    </main>
+  </section>
+
+  <div class="toasts" id="toasts"></div>
+  <div id="dialogRoot"></div>
+
+  <!-- Logo de UniBuyC (mismo diseño que el icono de la app) -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="logo" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="22" fill="#10B981"/>
+      <path d="M30 29 H40 V35 A5 5 0 0 1 30 35 Z" fill="#FFF"/><path d="M40 29 H50 V35 A5 5 0 0 1 40 35 Z" fill="#B7EAD9"/>
+      <path d="M50 29 H60 V35 A5 5 0 0 1 50 35 Z" fill="#FFF"/><path d="M60 29 H70 V35 A5 5 0 0 1 60 35 Z" fill="#B7EAD9"/>
+      <path d="M41 48 V58 A9 9 0 0 0 59 58 V48" fill="none" stroke="#FFF" stroke-width="10" stroke-linecap="round"/>
+    </symbol>
+  </svg>
+
+  <script type="module">
+    // Mismo avatar que en la app (generado a partir del id del usuario)
+    let blobatar = null;
+    import('https://cdn.jsdelivr.net/npm/blobatar@2.7.0/+esm').then((m) => { blobatar = m.blobatar; render(); }).catch(() => {});
+
+    // Backend en la nube; para probar en local: /admin?api=http://localhost:3000
+    const API = new URLSearchParams(location.search).get('api') || 'https://unibyc-api.vercel.app';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+    // La sesión de administrador dura solo mientras la pestaña esté abierta
+    let session = JSON.parse(sessionStorage.getItem('unibuyc-admin') || 'null');
+    let users = [];
+    let products = [];
+    let reports = [];
+    const REASON_TEXT = { SCAM: 'Fraude o estafa', PROHIBITED: 'Artículo prohibido', INAPPROPRIATE: 'Contenido inapropiado', WRONG_INFO: 'Información falsa', SPAM: 'Spam o publicidad', OTHER: 'Otro motivo' };
+    const REPORT_STATUS = { PENDING: 'Pendiente', RESOLVED: 'Resuelto', DISMISSED: 'Descartado' };
+    // Plurales con acento: 'calificación' → 'calificaciones'
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+    const imgUrl = (image) => (image?.startsWith('/') ? API + image : image);
+    let query = '';
+    let tab = 'users';
+    const fmtDate = (d, withTime) => new Date(d).toLocaleString('es-MX', withTime
+      ? { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }
+      : { day: 'numeric', month: 'short', year: 'numeric' });
+
+    async function api(path, options = {}) {
+      const res = await fetch(API + path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: 'Bearer ' + session.token } : {}), ...(options.headers || {}) },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && session) { logout('Tu sesión expiró. Vuelve a entrar.'); throw new Error('Sesión expirada'); }
+      if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message[0] : data.message || 'Error ' + res.status);
+      return data;
+    }
+
+    // ---------- Avisos ----------
+    function toast(text, isError = false) {
+      const el = document.createElement('div');
+      el.className = 'toast' + (isError ? ' error' : '');
+      el.textContent = text;
+      $('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // ---------- Login ----------
+    // Ojito: mostrar u ocultar la contraseña
+    $('togglePw').addEventListener('click', () => {
+      const input = $('password');
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      // Los SVG no tienen la propiedad .hidden: se usa el atributo
+      $('togglePw').querySelector('.eye-open').toggleAttribute('hidden', show);
+      $('togglePw').querySelector('.eye-closed').toggleAttribute('hidden', !show);
+      const label = show ? 'Ocultar contraseña' : 'Mostrar contraseña';
+      $('togglePw').setAttribute('aria-label', label);
+      $('togglePw').title = label;
+      input.focus();
+    });
+
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = $('loginBtn');
+      $('loginError').hidden = true;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      try {
+        const data = await api('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: $('email').value.trim().toLowerCase(), password: $('password').value }),
+        });
+        if (data.user?.role !== 'ADMIN') throw new Error('Esta cuenta no tiene permisos de administrador.');
+        session = { token: data.token, user: data.user };
+        sessionStorage.setItem('unibuyc-admin', JSON.stringify(session));
+        $('password').value = '';
+        $('password').type = 'password';
+        $('togglePw').querySelector('.eye-open').toggleAttribute('hidden', false);
+        $('togglePw').querySelector('.eye-closed').toggleAttribute('hidden', true);
+        showPanel();
+      } catch (err) {
+        $('loginError').textContent = err.message === 'Credenciales inválidas (Email)' || err.message === 'Credenciales inválidas (Password)'
+          ? 'Correo o contraseña incorrectos.' : err.message;
+        $('loginError').hidden = false;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+
+    function logout(message) {
+      session = null;
+      sessionStorage.removeItem('unibuyc-admin');
+      $('panel').hidden = true;
+      $('login').hidden = false;
+      if (message) toast(message, true);
+    }
+    $('logoutBtn').addEventListener('click', () => logout());
+
+    // ---------- Panel ----------
+    async function showPanel() {
+      $('login').hidden = true;
+      $('panel').hidden = false;
+      $('who').textContent = session.user.fullName + ' · ' + session.user.email;
+      await refresh();
+    }
+
+    async function refresh() {
+      try {
+        const [stats, list, prods, reps] = await Promise.all([api('/admin/stats'), api('/admin/users'), api('/admin/products'), api('/admin/reports')]);
+        users = list;
+        products = prods;
+        reports = reps;
+        $('reportsBadge').textContent = stats.pendingReports;
+        $('reportsBadge').hidden = !stats.pendingReports;
+        $('stats').innerHTML = [
+          [stats.users, 'Usuarios', stats.suspended ? stats.suspended + ' suspendido' + (stats.suspended === 1 ? '' : 's') : ''],
+          [stats.activeProducts, 'Productos activos', stats.products + ' en total'],
+          [stats.conversations, 'Conversaciones'],
+          [stats.messages, 'Mensajes'],
+          [stats.ratings, 'Calificaciones'],
+          [stats.pendingReports, 'Reportes pendientes'],
+        ].map(([n, l, sub]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`).join('');
+        render();
+      } catch (err) {
+        if (err.message !== 'Sesión expirada') toast(err.message, true);
+      }
+    }
+
+    $('search').addEventListener('input', (e) => { query = e.target.value.trim().toLowerCase(); render(); });
+
+    // Pestañas: Usuarios / Publicaciones
+    document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => {
+      tab = btn.dataset.tab;
+      document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
+      ['users', 'products', 'reports'].forEach((t) => ($(t).hidden = tab !== t));
+      $('sectionTitle').textContent = { users: 'Usuarios', products: 'Publicaciones', reports: 'Reportes pendientes' }[tab];
+      $('search').placeholder = {
+        users: 'Buscar por nombre, correo o matrícula',
+        products: 'Buscar por título, categoría o vendedor',
+        reports: 'Buscar por publicación, motivo o usuario',
+      }[tab];
+      render();
+    }));
+
+    function render() {
+      if (!session) return;
+      if (tab === 'products') return renderProducts();
+      if (tab === 'reports') return renderReports();
+      const list = users.filter((u) => !query || [u.fullName, u.email, u.matricula].some((v) => (v || '').toLowerCase().includes(query)));
+      if (!list.length) { $('users').innerHTML = `<div class="empty">${users.length ? 'Ningún usuario coincide con la búsqueda' : 'Cargando…'}</div>`; return; }
+      $('users').innerHTML = list.map((u, i) => {
+        const isMe = u.id === session.user.id;
+        const isAdmin = u.role === 'ADMIN';
+        const blocked = u.status !== 'active';
+        const statusBadge = u.status === 'banned'
+          ? '<span class="badge-banned">BLOQUEADO</span>'
+          : u.status === 'suspended' ? `<span class="badge-suspended">SUSPENDIDO hasta ${fmtDate(u.suspendedUntil, true)}</span>` : '';
+        const avatar = blobatar ? blobatar(u.id, { background: 'circle' }) : '';
+        const date = new Date(u.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `
+          <div class="user ${blocked ? 'is-blocked' : ''}" style="animation-delay:${Math.min(i, 10) * 30}ms">
+            <div class="avatar">${avatar}</div>
+            <div>
+              <div class="name">${esc(u.fullName)} ${isAdmin ? '<span class="badge-admin">ADMIN</span>' : ''} ${isMe ? '<span class="badge-you">Tú</span>' : ''} ${statusBadge}</div>
+              <div class="meta">${esc(u.email)} · Matrícula ${esc(u.matricula)}</div>
+              <div class="chips">
+                <span class="chip">Desde ${date}</span>
+                <span class="chip">${u.productCount} producto${u.productCount === 1 ? '' : 's'}</span>
+                <span class="chip">${u.conversationCount} chat${u.conversationCount === 1 ? '' : 's'}</span>
+              </div>
+              ${blocked && u.suspensionReason ? `<div class="reason">Motivo: ${esc(u.suspensionReason)}</div>` : ''}
+            </div>
+            <div class="actions">
+              <button class="btn btn-soft" data-reset="${u.id}">Restablecer contraseña</button>
+              ${blocked
+                ? `<button class="btn btn-soft" data-reactivate="${u.id}">Reactivar</button>`
+                : (!isMe && !isAdmin ? `<button class="btn btn-soft-warning" data-suspend="${u.id}">Suspender</button>` : '')}
+              <button class="btn btn-soft-danger" data-delete="${u.id}" ${isMe ? 'disabled title="No puedes eliminar tu propia cuenta"' : ''}>Eliminar</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    $('users').addEventListener('click', (e) => {
+      const reset = e.target.closest('[data-reset]');
+      const del = e.target.closest('[data-delete]');
+      const suspend = e.target.closest('[data-suspend]');
+      const reactivate = e.target.closest('[data-reactivate]');
+      if (reset) openReset(users.find((u) => u.id === reset.dataset.reset));
+      if (del && !del.disabled) openDelete(users.find((u) => u.id === del.dataset.delete));
+      if (suspend) openSuspend(users.find((u) => u.id === suspend.dataset.suspend));
+      if (reactivate) openReactivate(users.find((u) => u.id === reactivate.dataset.reactivate));
+    });
+
+    // ---------- Publicaciones ----------
+    const STATUS_TEXT = { AVAILABLE: 'Disponible', SOLD_OUT: 'Agotado', SOLD: 'Vendido' };
+    function renderProducts() {
+      const list = products.filter((p) => !query || [p.title, p.category, p.seller.fullName, p.seller.email].some((v) => (v || '').toLowerCase().includes(query)));
+      if (!list.length) { $('products').innerHTML = `<div class="empty">${products.length ? 'Ninguna publicación coincide con la búsqueda' : 'No hay publicaciones'}</div>`; return; }
+      $('products').innerHTML = list.map((p, i) => {
+        const img = p.image?.startsWith('/') ? API + p.image : p.image;
+        return `
+          <div class="user product clickable" data-view-product="${p.id}" style="animation-delay:${Math.min(i, 10) * 30}ms">
+            <img class="thumb" src="${esc(img)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />
+            <div>
+              <div class="name">${esc(p.title)} <span class="status-chip status-${p.status}">${STATUS_TEXT[p.status] || p.status}</span></div>
+              <div class="meta"><span class="price">$${Number(p.price).toFixed(2)}</span> · ${esc(p.category)} · de ${esc(p.seller.fullName)}</div>
+              <div class="chips">
+                <span class="chip">Publicado ${fmtDate(p.createdAt)}</span>
+                <span class="chip">${p.conversationCount} chat${p.conversationCount === 1 ? '' : 's'}</span>
+                <span class="chip">${plural(p.ratingCount, 'calificación', 'calificaciones')}</span>
+                ${p.pendingReports ? `<span class="chip chip-report">⚑ ${p.pendingReports} reporte${p.pendingReports === 1 ? '' : 's'}</span>` : ''}
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-soft" data-view-product="${p.id}">Ver detalles</button>
+              <button class="btn btn-soft-danger" data-delete-product="${p.id}">Eliminar</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    $('products').addEventListener('click', (e) => {
+      const del = e.target.closest('[data-delete-product]');
+      if (del) return openDeleteProduct(products.find((p) => p.id === del.dataset.deleteProduct));
+      const view = e.target.closest('[data-view-product]');
+      if (view) openProductDetail(view.dataset.viewProduct);
+    });
+
+    // ---------- Reportes ----------
+    function renderReports() {
+      const list = reports.filter((r) => !query || [r.product.title, REASON_TEXT[r.reason], r.details, r.reporter.fullName, r.product.seller.fullName].some((v) => (v || '').toLowerCase().includes(query)));
+      if (!list.length) { $('reports').innerHTML = `<div class="empty">${reports.length ? 'Ningún reporte coincide con la búsqueda' : '🎉 No hay reportes pendientes'}</div>`; return; }
+      $('reports').innerHTML = list.map((r, i) => {
+        const seller = r.product.seller;
+        const sellerBlocked = seller.bannedAt || (seller.suspendedUntil && new Date(seller.suspendedUntil) > new Date());
+        return `
+          <div class="user product" style="animation-delay:${Math.min(i, 10) * 30}ms">
+            <img class="thumb" src="${esc(imgUrl(r.product.image))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />
+            <div>
+              <div class="name"><span class="r-reason">⚑ ${REASON_TEXT[r.reason] || r.reason}</span> · ${esc(r.product.title)}</div>
+              ${r.details ? `<div class="r-details">“${esc(r.details)}”</div>` : ''}
+              <div class="chips">
+                <span class="chip">Reportó ${esc(r.reporter.fullName)}</span>
+                <span class="chip">Vendedor: ${esc(seller.fullName)}${sellerBlocked ? ' (suspendido)' : ''}</span>
+                <span class="chip">${fmtDate(r.createdAt, true)}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-soft" data-view-product="${r.product.id}">Ver publicación</button>
+              <button class="btn btn-ghost" data-dismiss="${r.id}">Descartar</button>
+              ${!sellerBlocked && seller.role !== 'ADMIN' ? `<button class="btn btn-soft-warning" data-suspend-seller="${r.id}">Suspender vendedor</button>` : ''}
+              <button class="btn btn-soft-danger" data-delete-reported="${r.id}">Eliminar publicación</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    $('reports').addEventListener('click', (e) => {
+      const view = e.target.closest('[data-view-product]');
+      const dismiss = e.target.closest('[data-dismiss]');
+      const suspend = e.target.closest('[data-suspend-seller]');
+      const del = e.target.closest('[data-delete-reported]');
+      if (view) openProductDetail(view.dataset.viewProduct);
+      if (dismiss) {
+        const r = reports.find((x) => x.id === dismiss.dataset.dismiss);
+        withSpinner(dismiss, 'Descartar', async () => {
+          await api(`/admin/reports/${r.id}/resolve`, { method: 'POST', body: JSON.stringify({ status: 'DISMISSED' }) });
+          toast('Reporte descartado');
+          await refresh();
+        });
+      }
+      if (suspend) {
+        const r = reports.find((x) => x.id === suspend.dataset.suspendSeller);
+        // Al suspender al vendedor, el reporte queda resuelto
+        openSuspend(r.product.seller, () =>
+          api(`/admin/reports/${r.id}/resolve`, { method: 'POST', body: JSON.stringify({ status: 'RESOLVED', resolution: 'Vendedor suspendido' }) }));
+      }
+      if (del) {
+        const r = reports.find((x) => x.id === del.dataset.deleteReported);
+        openDeleteProduct({ id: r.product.id, title: r.product.title, conversationCount: null });
+      }
+    });
+
+    // ---------- Ficha de una publicación ----------
+    async function openProductDetail(productId) {
+      let p;
+      try { p = await api(`/admin/products/${productId}`); } catch (err) { return toast(err.message, true); }
+      const seller = p.seller;
+      const sellerStatus = seller.bannedAt ? '<span class="badge-banned">BLOQUEADO</span>'
+        : seller.suspendedUntil && new Date(seller.suspendedUntil) > new Date() ? '<span class="badge-suspended">SUSPENDIDO</span>' : '';
+      const avatar = blobatar ? blobatar(seller.id, { background: 'circle' }) : '';
+      const { root, close } = dialog(`
+        <img class="detail-img" src="${esc(imgUrl(p.image))}" alt="" onerror="this.style.visibility='hidden'" />
+        <div class="detail-body">
+          <div class="chips">
+            <span class="status-chip status-${p.status}">${STATUS_TEXT[p.status] || p.status}</span>
+            ${p.deletedAt ? '<span class="badge-banned">ELIMINADA</span>' : ''}
+            <span class="chip">${esc(p.category)}</span>
+          </div>
+          <div class="detail-title">${esc(p.title)}</div>
+          <div class="price" style="font-size:20px">$${Number(p.price).toFixed(2)}</div>
+          <div class="detail-desc">${esc(p.description) || '<i>Sin descripción</i>'}</div>
+          <div class="detail-grid">
+            <div><b>${fmtDate(p.createdAt)}</b><span>Publicada</span></div>
+            <div><b>${p.conversationCount}</b><span>Conversaciones</span></div>
+            <div><b>${p.ratingCount ? '★ ' + p.ratingAverage.toFixed(1) : '—'}</b><span>${plural(p.ratingCount, 'calificación', 'calificaciones')}</span></div>
+            ${p.soldAt ? `<div><b>${fmtDate(p.soldAt)}</b><span>Vendida</span></div>` : ''}
+          </div>
+          <div class="section-title">Vendedor</div>
+          <div class="seller-box">
+            <div class="avatar">${avatar}</div>
+            <div>
+              <div class="name">${esc(seller.fullName)} ${sellerStatus}</div>
+              <div class="meta">${esc(seller.email)} · Matrícula ${esc(seller.matricula)}</div>
+            </div>
+          </div>
+          <div class="section-title">Reportes (${p.reports.length})</div>
+          ${p.reports.length ? p.reports.map((r) => `
+            <div class="report-item">
+              <div class="r-head">
+                <span class="r-reason">⚑ ${REASON_TEXT[r.reason] || r.reason}</span>
+                <span class="r-status ${r.status}">${REPORT_STATUS[r.status]}</span>
+                <span class="meta">por ${esc(r.reporter.fullName)} · ${fmtDate(r.createdAt, true)}</span>
+              </div>
+              ${r.details ? `<div class="r-details">“${esc(r.details)}”</div>` : ''}
+              ${r.resolution ? `<div class="meta">Resolución: ${esc(r.resolution)}</div>` : ''}
+            </div>`).join('') : '<div class="meta">Esta publicación no tiene reportes.</div>'}
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost" id="closeDetail">Cerrar</button>
+          ${!p.deletedAt ? '<button class="btn btn-danger" id="deleteFromDetail">Eliminar publicación</button>' : ''}
+        </div>`, true);
+      root.querySelector('#closeDetail').onclick = close;
+      const delBtn = root.querySelector('#deleteFromDetail');
+      if (delBtn) delBtn.onclick = () => openDeleteProduct({ id: p.id, title: p.title, conversationCount: p.conversationCount });
+    }
+
+    // ---------- Diálogos ----------
+    const ICONS = {
+      key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14.5 8.5l2 2"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>',
+      pause: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 15V9M14 15V9"/></svg>',
+      ban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>',
+      undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>',
+    };
+    function dialog(html, wide = false) {
+      const root = $('dialogRoot');
+      root.innerHTML = `<div class="backdrop"><div class="dialog ${wide ? 'wide' : ''}" role="dialog" aria-modal="true">${html}</div></div>`;
+      const close = () => (root.innerHTML = '');
+      root.querySelector('.backdrop').addEventListener('click', (e) => { if (e.target.classList.contains('backdrop')) close(); });
+      document.addEventListener('keydown', function onKey(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } });
+      return { root, close };
+    }
+
+    // Contraseña temporal fácil de dictar (sin 0/O ni 1/l)
+    function tempPassword() {
+      const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      const bytes = crypto.getRandomValues(new Uint32Array(10));
+      return Array.from(bytes, (b) => chars[b % chars.length]).join('');
+    }
+
+    function openReset(user) {
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--primary-soft);color:var(--primary)">${ICONS.key}</div>
+        <h3>Restablecer contraseña</h3>
+        <p>Nueva contraseña para <strong>${esc(user.fullName)}</strong>. Después pásasela por un medio seguro.</p>
+        <div class="pw-row">
+          <input class="input" id="newPw" value="${tempPassword()}" minlength="6" />
+          <button class="btn btn-ghost" id="regen" type="button" title="Generar otra">↻</button>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" id="cancel">Cancelar</button>
+          <button class="btn btn-primary" id="confirm">Guardar</button>
+        </div>`);
+      root.querySelector('#regen').onclick = () => (root.querySelector('#newPw').value = tempPassword());
+      root.querySelector('#cancel').onclick = close;
+      root.querySelector('#confirm').onclick = async (e) => {
+        const password = root.querySelector('#newPw').value;
+        if (password.length < 6) return toast('La contraseña debe tener al menos 6 caracteres', true);
+        e.target.disabled = true;
+        e.target.innerHTML = '<span class="spinner"></span>';
+        try {
+          await api(`/admin/users/${user.id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) });
+          showResetDone(user, password);
+        } catch (err) {
+          toast(err.message, true);
+          e.target.disabled = false;
+          e.target.textContent = 'Guardar';
+        }
+      };
+    }
+
+    function showResetDone(user, password) {
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--primary-soft);color:var(--primary)">${ICONS.check}</div>
+        <h3>Contraseña actualizada</h3>
+        <p>${esc(user.fullName)} ya puede entrar con:</p>
+        <div class="pw-row">
+          <input class="input" readonly value="${esc(password)}" />
+          <button class="btn btn-soft" id="copy" type="button">Copiar</button>
+        </div>
+        <div class="row"><button class="btn btn-primary" id="ok">Listo</button></div>`);
+      root.querySelector('#copy').onclick = async (e) => {
+        try { await navigator.clipboard.writeText(password); e.target.textContent = 'Copiada'; } catch { toast('No se pudo copiar; selecciónala a mano', true); }
+      };
+      root.querySelector('#ok').onclick = close;
+    }
+
+    function openDelete(user) {
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--danger-soft);color:var(--danger)">${ICONS.trash}</div>
+        <h3>¿Eliminar a ${esc(user.fullName)}?</h3>
+        <p>Esta acción no se puede deshacer. Se borrará:</p>
+        <ul>
+          <li>Su cuenta (${esc(user.email)})</li>
+          <li>${user.productCount} producto${user.productCount === 1 ? '' : 's'} con sus calificaciones</li>
+          <li>${user.conversationCount} ${user.conversationCount === 1 ? 'conversación' : 'conversaciones'} con todos sus mensajes</li>
+        </ul>
+        <label for="confirmText">Escribe <strong>ELIMINAR</strong> para confirmar</label>
+        <input class="input" id="confirmText" autocomplete="off" />
+        <div class="row">
+          <button class="btn btn-ghost" id="cancel">Cancelar</button>
+          <button class="btn btn-danger" id="confirm" disabled>Eliminar</button>
+        </div>`);
+      const confirmBtn = root.querySelector('#confirm');
+      root.querySelector('#confirmText').addEventListener('input', (e) => (confirmBtn.disabled = e.target.value.trim() !== 'ELIMINAR'));
+      root.querySelector('#cancel').onclick = close;
+      confirmBtn.onclick = async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner"></span>';
+        try {
+          await api(`/admin/users/${user.id}`, { method: 'DELETE' });
+          close();
+          toast(`${user.fullName} fue eliminado`);
+          await refresh();
+        } catch (err) {
+          toast(err.message, true);
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Eliminar';
+        }
+      };
+    }
+
+    // Botón con indicador de carga mientras se hace la petición
+    async function withSpinner(btn, label, fn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      try { await fn(); } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = label; }
+    }
+
+    function openSuspend(user, onDone) {
+      const OPTIONS = [[1, '1 día'], [3, '3 días'], [7, '7 días'], [30, '30 días'], ['ban', 'Permanente']];
+      let choice = 7;
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--warning-soft);color:var(--warning)">${ICONS.pause}</div>
+        <h3>Suspender a ${esc(user.fullName)}</h3>
+        <p>No podrá iniciar sesión y sus publicaciones dejarán de mostrarse.</p>
+        <div class="options">${OPTIONS.map(([v, l]) => `<button type="button" class="option ${v === 'ban' ? 'danger' : ''} ${v === choice ? 'selected' : ''}" data-v="${v}">${l}</button>`).join('')}</div>
+        <div class="note" id="banNote" hidden>Bloqueo permanente: su correo (${esc(user.email)}) y su matrícula (${esc(user.matricula)}) no podrán volver a registrarse. Puedes revertirlo con «Reactivar».</div>
+        <label for="reason">Motivo (opcional, se le mostrará al usuario)</label>
+        <textarea class="input" id="reason" maxlength="300" placeholder="Ej. Publicaciones engañosas"></textarea>
+        <div class="row">
+          <button class="btn btn-ghost" id="cancel">Cancelar</button>
+          <button class="btn btn-primary" id="confirm" style="background:var(--warning);box-shadow:none">Suspender 7 días</button>
+        </div>`);
+      const confirmBtn = root.querySelector('#confirm');
+      const label = () => (choice === 'ban' ? 'Bloquear permanentemente' : `Suspender ${OPTIONS.find(([v]) => v === choice)[1]}`);
+      root.querySelectorAll('.option').forEach((opt) => opt.addEventListener('click', () => {
+        choice = opt.dataset.v === 'ban' ? 'ban' : Number(opt.dataset.v);
+        root.querySelectorAll('.option').forEach((o) => o.classList.toggle('selected', o === opt));
+        root.querySelector('#banNote').hidden = choice !== 'ban';
+        confirmBtn.style.background = choice === 'ban' ? 'var(--danger)' : 'var(--warning)';
+        confirmBtn.textContent = label();
+      }));
+      root.querySelector('#cancel').onclick = close;
+      confirmBtn.onclick = () => withSpinner(confirmBtn, label(), async () => {
+        const reason = root.querySelector('#reason').value.trim() || undefined;
+        if (choice === 'ban') await api(`/admin/users/${user.id}/ban`, { method: 'POST', body: JSON.stringify({ reason }) });
+        else await api(`/admin/users/${user.id}/suspend`, { method: 'POST', body: JSON.stringify({ days: choice, reason }) });
+        if (onDone) await onDone();
+        close();
+        toast(choice === 'ban' ? `${user.fullName} fue bloqueado permanentemente` : `${user.fullName} fue suspendido ${label().replace('Suspender ', '')}`);
+        await refresh();
+      });
+    }
+
+    function openReactivate(user) {
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--primary-soft);color:var(--primary)">${ICONS.undo}</div>
+        <h3>¿Reactivar a ${esc(user.fullName)}?</h3>
+        <p>Podrá volver a iniciar sesión y sus publicaciones volverán a mostrarse.${user.status === 'banned' ? ' Su correo y matrícula se desbloquean.' : ''}</p>
+        <div class="row">
+          <button class="btn btn-ghost" id="cancel">Cancelar</button>
+          <button class="btn btn-primary" id="confirm">Reactivar</button>
+        </div>`);
+      root.querySelector('#cancel').onclick = close;
+      const confirmBtn = root.querySelector('#confirm');
+      confirmBtn.onclick = () => withSpinner(confirmBtn, 'Reactivar', async () => {
+        await api(`/admin/users/${user.id}/reactivate`, { method: 'POST' });
+        close();
+        toast(`${user.fullName} fue reactivado`);
+        await refresh();
+      });
+    }
+
+    function openDeleteProduct(product) {
+      const { root, close } = dialog(`
+        <div class="icon" style="background:var(--danger-soft);color:var(--danger)">${ICONS.trash}</div>
+        <h3>¿Eliminar «${esc(product.title)}»?</h3>
+        <p>Dejará de aparecer en la app y sus reportes pendientes quedarán resueltos. Sus chats se conservan como registro, pero ya no se podrán enviar mensajes.</p>
+        <div class="row">
+          <button class="btn btn-ghost" id="cancel">Cancelar</button>
+          <button class="btn btn-danger" id="confirm">Eliminar</button>
+        </div>`);
+      root.querySelector('#cancel').onclick = close;
+      const confirmBtn = root.querySelector('#confirm');
+      confirmBtn.onclick = () => withSpinner(confirmBtn, 'Eliminar', async () => {
+        await api(`/admin/products/${product.id}`, { method: 'DELETE' });
+        close();
+        toast(`«${product.title}» fue eliminada`);
+        await refresh();
+      });
+    }
+
+    if (session) showPanel();
+  </script>
+</body>
+</html>

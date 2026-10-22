@@ -13,7 +13,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
-import { ArrowLeft, Heart, Share2, Star, MessageCircle, Pencil, Trash2, Lock } from 'lucide-react-native';
+import { ArrowLeft, Heart, Share2, Star, MessageCircle, Pencil, Trash2, Lock, Flag } from 'lucide-react-native';
 import { Product, ProductRating, ProductStatus } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { useFavorites } from '../store/favoritesStore'; // <--- 1. Importar Store de Favoritos
@@ -91,6 +91,14 @@ export default function ProductDetailScreen({ route, navigation }: any) {
     } finally {
       setSavingRating(false);
     }
+  };
+
+  const handleReport = () => {
+    if (!token) {
+      askToLogin('Inicia sesión para reportar publicaciones.');
+      return;
+    }
+    navigation.navigate('ReportProduct', { product });
   };
 
   const handleShare = async () => {
@@ -224,6 +232,20 @@ export default function ProductDetailScreen({ route, navigation }: any) {
                   size={24}
                 />
               </PopOnChange>
+            </PressableScale>
+          )}
+
+          {/* Reportar: solo publicaciones de otros */}
+          {!isOwner && !removed && (
+            <PressableScale
+              scaleTo={0.85}
+              style={[styles.iconButton, { marginLeft: 10 }]}
+              onPress={handleReport}
+              accessibilityRole="button"
+              accessibilityLabel="Reportar publicación"
+            >
+              {/* @ts-ignore */}
+              <Flag color={c.danger} size={22} />
             </PressableScale>
           )}
 

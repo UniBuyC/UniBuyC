@@ -7,10 +7,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // @ts-ignore
-import { Store } from 'lucide-react-native';
+import { Store, Eye, EyeOff } from 'lucide-react-native';
 import { useAuthStore } from '../store/authStore';
 import { loginUser } from '../api/auth';
 import PressableScale from '../components/anim/PressableScale';
@@ -26,6 +27,7 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<'email' | 'password' | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginAction = useAuthStore((state) => state.login);
 
@@ -86,19 +88,34 @@ export default function LoginScreen({ navigation }: any) {
             returnKeyType="next"
           />
 
-          <TextInput
-            style={[styles.input, focused === 'password' && styles.inputFocused]}
-            placeholder="Contraseña"
-            placeholderTextColor={c.textFaint}
-            secureTextEntry
-            textContentType="password"
-            value={password}
-            onChangeText={setPassword}
-            onFocus={() => setFocused('password')}
-            onBlur={() => setFocused(null)}
-            returnKeyType="go"
-            onSubmitEditing={handleLogin}
-          />
+          {/* Contraseña con botón de ojito para mostrarla u ocultarla */}
+          <View style={[styles.input, styles.passwordRow, focused === 'password' && styles.inputFocused]}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Contraseña"
+              placeholderTextColor={c.textFaint}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="password"
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused(null)}
+              returnKeyType="go"
+              onSubmitEditing={handleLogin}
+            />
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={10}
+              style={styles.eyeButton}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {/* @ts-ignore */}
+              {showPassword ? <EyeOff color={c.textMuted} size={22} /> : <Eye color={c.textMuted} size={22} />}
+            </Pressable>
+          </View>
 
           <PressableScale style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
             {loading ? (
@@ -182,6 +199,21 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 16,
     color: c.text,
     marginBottom: 12,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 0,
+    paddingRight: 6,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 15,
+    fontSize: 16,
+    color: c.text,
+  },
+  eyeButton: {
+    padding: 8,
   },
   inputFocused: {
     borderColor: c.primary,

@@ -11,6 +11,9 @@ export type ProductStatus = 'AVAILABLE' | 'SOLD_OUT' | 'SOLD';
 // Por qué un chat ya no acepta mensajes (null = abierto)
 export type LockReason = 'deleted' | 'sold' | null;
 
+// Motivos para reportar una publicación
+export type ReportReason = 'SCAM' | 'PROHIBITED' | 'INAPPROPRIATE' | 'WRONG_INFO' | 'SPAM' | 'OTHER';
+
 export interface Product {
   id: string;
   title: string;

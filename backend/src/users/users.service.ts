@@ -1,12 +1,14 @@
 import {
   Injectable,
   ConflictException,
+  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { activeSellerFilter } from '../auth/account-status';
 
 // Campos que se pueden mostrar públicamente (nunca la contraseña)
 const PUBLIC_FIELDS = {
@@ -24,7 +26,18 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { password, ...userData } = createUserDto;
+    const { password, ...rest } = createUserDto;
+    const userData = { ...rest, email: rest.email.trim().toLowerCase(), matricula: rest.matricula.trim() };
+
+    // Correo o matrícula bloqueados permanentemente
+    const banned = await this.prisma.bannedIdentity.findFirst({
+      where: { OR: [{ email: userData.email }, { matricula: userData.matricula }] },
+    });
+    if (banned) {
+      throw new ForbiddenException(
+        'No es posible crear una cuenta con este correo o matrícula porque fue bloqueada permanentemente',
+      );
+    }
 
     // 1. Encriptar la contraseña (Hashing)
     const salt = await bcrypt.genSalt(10);
@@ -68,14 +81,20 @@ export class UsersService {
   async findSellers(search?: string) {
     const term = search?.trim();
     const users = await this.prisma.user.findMany({
-      where: term
-        ? {
-            OR: [
-              { fullName: { contains: term, mode: 'insensitive' } },
-              { matricula: { contains: term } },
-            ],
-          }
-        : undefined,
+      // Solo cuentas activas (ni suspendidas ni bloqueadas), con búsqueda opcional
+      where: {
+        AND: [
+          activeSellerFilter(),
+          term
+            ? {
+                OR: [
+                  { fullName: { contains: term, mode: 'insensitive' } },
+                  { matricula: { contains: term } },
+                ],
+              }
+            : {},
+        ],
+      },
       select: {
         id: true,
         fullName: true,

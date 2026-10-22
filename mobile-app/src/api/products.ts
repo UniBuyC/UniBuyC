@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { api, API_URL } from './apiClient';
-import { Product, ProductRating, ProductStatus } from '../types';
+import { Product, ProductRating, ProductStatus, ReportReason } from '../types';
 
 // 1. Obtener todos los productos (Público - Para el Home)
 export const getProducts = async (): Promise<Product[]> => {
@@ -111,5 +111,12 @@ export const uploadProductImage = async (uri: string, token: string, mimeType?: 
     xhr.onerror = () => reject(new Error('No hay conexión con el servidor'));
     xhr.ontimeout = () => reject(new Error('El servidor tardó demasiado en responder'));
     xhr.send(formData);
+  });
+};
+
+// 8. Reportar una publicación (Privado)
+export const reportProduct = async (id: string, reason: ReportReason, details: string, token: string) => {
+  await api.post(`/products/${id}/report`, { reason, details: details.trim() || undefined }, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 };

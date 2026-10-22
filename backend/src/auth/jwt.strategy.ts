@@ -1,6 +1,8 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { assertAccountActive } from './account-status';
 import { JWT_SECRET } from './jwt-secret';
 
 // 1. Definimos qué datos esperamos recibir en el token para evitar "any"
@@ -11,7 +13,7 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private prisma: PrismaService) {
     super({
       // Le decimos que busque el token en el encabezado "Authorization: Bearer ..."
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -21,9 +23,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // 2. Quitamos "async" porque no estamos haciendo consultas a la BD aquí (no hay await)
-  // 3. Usamos la interfaz "JwtPayload" en lugar de "any"
-  validate(payload: JwtPayload) {
+  // En cada petición revisamos que la cuenta siga existiendo y no esté suspendida:
+  // así una suspensión surte efecto de inmediato, aunque el token siga vigente
+  async validate(payload: JwtPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { suspendedUntil: true, bannedAt: true, suspensionReason: true },
+    });
+    if (!user) throw new UnauthorizedException('La cuenta ya no existe');
+    assertAccountActive(user);
     // Esto inyecta el usuario en "req.user" automáticamente
     return { id: payload.id, email: payload.email };
   }

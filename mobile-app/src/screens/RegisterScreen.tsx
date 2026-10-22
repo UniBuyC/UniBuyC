@@ -6,6 +6,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -17,7 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 // @ts-ignore
-import { ArrowLeft, Check, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Check, UserPlus, Eye, EyeOff } from 'lucide-react-native';
 import { registerUser } from '../api/auth';
 import PressableScale from '../components/anim/PressableScale';
 import PopOnChange from '../components/anim/PopOnChange';
@@ -81,6 +82,7 @@ export default function RegisterScreen({ navigation }: any) {
     password: '',
   });
   const [focused, setFocused] = useState<Field | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [loading, setLoading] = useState(false);
 
@@ -157,7 +159,7 @@ export default function RegisterScreen({ navigation }: any) {
     fullName: { placeholder: 'Juan Pérez', autoCapitalize: 'words', textContentType: 'name' },
     matricula: { placeholder: '2203...', keyboardType: 'number-pad' },
     email: { placeholder: 'nombre@uam.mx', autoCapitalize: 'none', keyboardType: 'email-address', textContentType: 'emailAddress' },
-    password: { placeholder: 'Mínimo 6 caracteres', secureTextEntry: true, textContentType: 'newPassword' },
+    password: { placeholder: 'Mínimo 6 caracteres', secureTextEntry: !showPassword, autoCapitalize: 'none', autoCorrect: false, textContentType: 'newPassword' },
   };
   const titles: Record<Field, string> = {
     fullName: 'Nombre Completo',
@@ -236,6 +238,19 @@ export default function RegisterScreen({ navigation }: any) {
                     submitBehavior={i === STEPS.length - 1 ? 'blurAndSubmit' : 'submit'}
                     {...fieldProps[step.key]}
                   />
+                  {/* Ojito para mostrar u ocultar la contraseña */}
+                  {step.key === 'password' && (
+                    <Pressable
+                      onPress={() => setShowPassword((v) => !v)}
+                      hitSlop={10}
+                      style={{ padding: 4, marginRight: valid ? 8 : 0 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {/* @ts-ignore */}
+                      {showPassword ? <EyeOff color={c.textMuted} size={20} /> : <Eye color={c.textMuted} size={20} />}
+                    </Pressable>
+                  )}
                   {/* ✓ que rebota al completar el campo */}
                   {valid && (
                     <PopOnChange trigger={valid} scale={1.5}>

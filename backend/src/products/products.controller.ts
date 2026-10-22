@@ -23,6 +23,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { RateProductDto } from './dto/rate-product.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { ReportProductDto } from './dto/report-product.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 
@@ -126,6 +127,17 @@ export class ProductsController {
     @Request() req: RequestWithUser,
   ) {
     return this.productsService.rate(id, req.user.id, rateProductDto.value);
+  }
+
+  // 🔒 Reportar una publicación (fraude, contenido prohibido, etc.)
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/report')
+  report(
+    @Param('id') id: string,
+    @Body() dto: ReportProductDto,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.productsService.report(id, req.user.id, dto.reason, dto.details);
   }
 
   // 🔒 Cambiar estado: disponible, agotado o vendido (solo el vendedor)
